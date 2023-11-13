@@ -1,4 +1,4 @@
-module github.com/dshargool/go-modbus-api.git
+module github.com/dshargool/go-mbslave-api.git
 
 go 1.21.1
 

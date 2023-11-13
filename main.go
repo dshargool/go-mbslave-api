@@ -5,8 +5,8 @@ import (
 	"log"
 	"log/slog"
 
-	"github.com/dshargool/go-modbus-api.git/pkg/handlers"
-	"github.com/dshargool/go-modbus-api.git/pkg/types"
+	"github.com/dshargool/go-mbslave-api.git/pkg/handlers"
+	"github.com/dshargool/go-mbslave-api.git/pkg/types"
 )
 
 var config = types.Configuration{}

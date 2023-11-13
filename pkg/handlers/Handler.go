@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/dshargool/go-modbus-api.git/pkg/types"
+	"github.com/dshargool/go-mbslave-api.git/pkg/types"
 	"github.com/simonvetter/modbus"
 )
 
