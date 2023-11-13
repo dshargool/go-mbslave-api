@@ -9,13 +9,7 @@ import (
 	"github.com/simonvetter/modbus"
 )
 
-type ModbusSlave struct {
-	lock       sync.RWMutex
-	uptime     uint32
-	holdingReg []uint16
-}
-
-func (h Handler) MbInit() (*modbus.ModbusServer, error) {
+func (h Handler) MbInit() *modbus.ModbusServer {
 	mbServer, err := modbus.NewServer(&modbus.ServerConfiguration{
 		URL:        "tcp://0.0.0.0:5502",
 		Timeout:    10 * time.Second,
@@ -25,7 +19,7 @@ func (h Handler) MbInit() (*modbus.ModbusServer, error) {
 		slog.Error("Unable to initialize modbus slave: " + err.Error())
 		os.Exit(1)
 	}
-	return mbServer, nil
+	return mbServer
 }
 
 func (h Handler) MbStart() {
