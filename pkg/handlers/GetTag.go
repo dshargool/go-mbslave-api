@@ -31,10 +31,10 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 		slog.Debug("GET request for /tag/<TAG>", "tag", tag, "response", response)
 		response.Value = response.Value / response.Divisor
 		err = json.NewEncoder(w).Encode(response)
-        if err != nil {
-            w.WriteHeader(http.StatusInternalServerError)
-            return
-        }
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 	case "PUT":
 		value := query.Get("value")
