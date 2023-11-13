@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -45,7 +44,7 @@ func setupTestSuite() testHandler {
 	myDb.CreateTable()
 	myDb.UpdateTableTags(testConfig.Registers)
 	// Set a valid value to our 'ValidTag' address in the test db
-	myDb.SetAddressValue(2, 100.0)
+	_ = myDb.SetAddressValue(2, 100.0)
 
 	myHandler := New(testConfig, &myDb)
 
@@ -155,6 +154,26 @@ func TestGetValidTag(t *testing.T) {
 	testHandler.cleanUp()
 }
 
+func TestPutValidTag(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := 200
+
+	data := url.Values{}
+	data.Add("value", "100")
+
+	request, _ := http.NewRequest(http.MethodPut, "/tag/ValidTag", nil)
+	request.URL.RawQuery = data.Encode()
+	response := httptest.NewRecorder()
+
+	testHandler.handler.GetTag(response, request)
+	res := response.Result().StatusCode
+
+	if res != expected {
+		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
 func TestGetValidRegister(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := 200
@@ -178,9 +197,8 @@ func TestPutValidRegister(t *testing.T) {
 	data := url.Values{}
 	data.Add("value", "100")
 
-    fmt.Println(data)
 	request, _ := http.NewRequest(http.MethodPut, "/register/2", nil)
-    request.URL.RawQuery = data.Encode()
+	request.URL.RawQuery = data.Encode()
 	response := httptest.NewRecorder()
 
 	testHandler.handler.GetRegister(response, request)
