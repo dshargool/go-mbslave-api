@@ -13,11 +13,11 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		w.Header().Add("Content-Type", "application/json")
-        err := json.NewEncoder(w).Encode(h.registers)
-        if err != nil {
-            w.WriteHeader(http.StatusInternalServerError)
-            return
-        }
+		err := json.NewEncoder(w).Encode(h.registers)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -40,10 +40,10 @@ func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 		}
 		slog.Debug("GET request for /register/<ADDRESS>", "address", register, "response", response)
 		response.Value = response.Value / response.Divisor
-        err = json.NewEncoder(w).Encode(response)
-        if err != nil {
-            w.WriteHeader(http.StatusInternalServerError)
-            return
-        }
+		err = json.NewEncoder(w).Encode(response)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 }

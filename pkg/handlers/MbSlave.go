@@ -3,7 +3,6 @@ package handlers
 import (
 	"log/slog"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/simonvetter/modbus"
