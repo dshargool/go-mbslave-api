@@ -51,7 +51,7 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 			}
 
 			slog.Info("Updating tag " + tag + " with value " + strconv.FormatFloat(fValue, 'f', -1, 64))
-			h.db.SetTagValue(tag, fValue)
+			err = h.db.SetTagValue(tag, fValue)
 			if err != nil {
 				fmt.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)

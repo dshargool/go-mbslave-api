@@ -54,6 +54,10 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 		if req.IsWrite {
 			slog.Debug("Updating database with holding registers", "address", regAddr, "value", req.Args[i])
 			current, err := h.db.GetRowByAddress(int(regAddr))
+			if err != nil {
+				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", req.Args[i], "err", err)
+				return res, modbus.ErrProtocolError
+			}
 			_, err = h.db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", float64(req.Args[i])/current.Divisor, regAddr)
 			if err != nil {
 				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", req.Args[i], "err", err)
