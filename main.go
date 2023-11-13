@@ -30,7 +30,7 @@ func main() {
 
 	slog.Info("Starting handler")
 	handler := handlers.New(config, &myDb)
-	handler.MbSlave, err = handler.MbInit()
+	handler.MbSlave = handler.MbInit()
 	handler.MbStart()
 	defer handler.MbStop()
 	handler.HandleRequests(config.Port)

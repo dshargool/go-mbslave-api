@@ -60,7 +60,7 @@ func TestGetRegisters(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, want %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
 
 func TestGetNullValueTag(t *testing.T) {
@@ -76,7 +76,7 @@ func TestGetNullValueTag(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
 
 func TestGetNullRegister(t *testing.T) {
@@ -92,7 +92,7 @@ func TestGetNullRegister(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
 
 func TestGetUnknownTag(t *testing.T) {
@@ -108,7 +108,7 @@ func TestGetUnknownTag(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
 
 func TestGetUnknownRegister(t *testing.T) {
@@ -124,7 +124,7 @@ func TestGetUnknownRegister(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
 
 func TestGetValidTag(t *testing.T) {
@@ -140,7 +140,7 @@ func TestGetValidTag(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
 
 func TestGetValidRegister(t *testing.T) {
@@ -156,7 +156,7 @@ func TestGetValidRegister(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
 
 func TestPutValidRegister(t *testing.T) {
@@ -175,5 +175,5 @@ func TestPutValidRegister(t *testing.T) {
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
-	testHandler.handler.db.DB.Close()
+	testHandler.cleanUp()
 }
