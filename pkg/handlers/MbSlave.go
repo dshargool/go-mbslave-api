@@ -1,0 +1,87 @@
+package handlers
+
+import (
+	"log/slog"
+	"os"
+	"sync"
+	"time"
+
+	"github.com/simonvetter/modbus"
+)
+
+type ModbusSlave struct {
+	lock       sync.RWMutex
+	uptime     uint32
+	holdingReg []uint16
+}
+
+func (h Handler) MbInit() (*modbus.ModbusServer, error) {
+	mbServer, err := modbus.NewServer(&modbus.ServerConfiguration{
+		URL:        "tcp://0.0.0.0:5502",
+		Timeout:    10 * time.Second,
+		MaxClients: 5,
+	}, &h)
+	if err != nil {
+		slog.Error("Unable to initialize modbus slave: " + err.Error())
+		os.Exit(1)
+	}
+	return mbServer, nil
+}
+
+func (h Handler) MbStart() {
+	err := h.MbSlave.Start()
+	if err != nil {
+		slog.Error("Unable to start modbus slave: " + err.Error())
+		os.Exit(1)
+	}
+}
+
+func (h Handler) MbStop() {
+	err := h.MbSlave.Stop()
+	if err != nil {
+		slog.Error("Unable to start modbus slave: " + err.Error())
+		os.Exit(1)
+	}
+}
+
+func (h *Handler) HandleCoils(req *modbus.CoilsRequest) (res []bool, err error) {
+	slog.Warn("Not implemented!")
+	return
+}
+
+func (h *Handler) HandleDiscreteInputs(req *modbus.DiscreteInputsRequest) (res []bool, err error) {
+	slog.Warn("Not implemented!")
+	return
+}
+
+func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (res []uint16, err error) {
+	// Write to DB entry with matching address.  Only update don't insert as the DbHandler should do the inserting of null values
+	for i := 0; i < int(req.Quantity); i++ {
+		regAddr := req.Addr + uint16(i)
+		if req.IsWrite {
+			slog.Debug("Updating database with holding registers", "address", regAddr, "value", req.Args[i])
+			_, err = h.db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", req.Args[i], regAddr)
+			if err != nil {
+				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", req.Args[i], "err", err)
+				return res, modbus.ErrProtocolError
+			}
+		} else {
+			slog.Debug("Reading holding registers", "address", regAddr)
+			row := h.db.QueryRow("SELECT value FROM datapoints WHERE address=$1", regAddr)
+			var value uint16
+
+			err := row.Scan(&value)
+			if err != nil {
+				slog.Error("Unable to read from database", "address", regAddr, "error", err)
+				return res, modbus.ErrIllegalDataAddress
+			}
+			res = append(res, value)
+		}
+	}
+	return
+}
+
+func (h *Handler) HandleInputRegisters(req *modbus.InputRegistersRequest) (res []uint16, err error) {
+	slog.Warn("Not implemented!")
+	return
+}
