@@ -20,14 +20,32 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: '1.21.1'
-
-    - name: Build
-      run: go build -v ./...
-
-    - name: Test
-      run: go test -v ./...
-      
+        
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3
       with:
         version: latest
+
+    - name: Build
+      run: go build -v ./...
+      
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21.1'
+
+    - name: Set up test sqlite db
+      run: | 
+        sudo apt-get install -y sqlite3
+        mkdir -p pkg/handlers/test/data
+        sqlite3 pkg/handlers/test/data/test.db
+        
+    - name: Test
+      run: go test -v ./...
+      
