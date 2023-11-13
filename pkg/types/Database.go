@@ -59,10 +59,28 @@ func (db *SqlDb) GetRowByTag(tag string) (response ModbusResponse, err error) {
 	return
 }
 
-func (db *SqlDb) GetRowByRegister(address string) (response ModbusResponse, err error) {
+func (db *SqlDb) SetTagValue(tag string, value float64) error {
+	slog.Info("Setting DB Row", "tag", tag, "value", value)
+	_, err := db.Exec("UPDATE datapoints SET value = $1 WHERE tag = $2", value, tag)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (db *SqlDb) GetRowByAddress(address int) (response ModbusResponse, err error) {
 	slog.Info("Getting DB Row", "address", address)
 	rows := db.QueryRow("SELECT address,tag,description,divisor,value,last_update FROM datapoints WHERE address=$1", address)
 	err = rows.Scan(&response.Address, &response.Tag, &response.Description, &response.Divisor, &response.Value, &response.LastUpdate)
 
 	return
+}
+
+func (db *SqlDb) SetAddressValue(address int, value float64) error {
+	slog.Info("Setting DB Row", "address", address, "value", value)
+	_, err := db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", value, address)
+	if err != nil {
+		return err
+	}
+	return nil
 }

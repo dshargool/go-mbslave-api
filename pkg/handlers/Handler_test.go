@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/dshargool/go-mbslave-api.git/pkg/types"
@@ -24,16 +24,28 @@ func setupTestSuite() testHandler {
 	myDb := types.SqlDb{}
 	myDb.Open(testConfig.DBPath)
 
-	testRegister := types.ModbusTag{
-		Tag:         "TestTag",
-		Description: "Test",
-		Address:     1,
-		Divisor:     1,
+	testRegisters := []types.ModbusTag{
+		{
+			Tag:         "TestTag",
+			Description: "Test",
+			Address:     1,
+			Divisor:     10,
+		},
+		{
+			Tag:         "ValidTag",
+			Description: "Test",
+			Address:     2,
+			Divisor:     10,
+		},
 	}
-	testConfig.Registers[types.OpcTag(testRegister.Tag)] = testRegister
+	for _, register := range testRegisters {
+		testConfig.Registers[types.OpcTag(register.Tag)] = register
+	}
 
 	myDb.CreateTable()
 	myDb.UpdateTableTags(testConfig.Registers)
+	// Set a valid value to our 'ValidTag' address in the test db
+	myDb.SetAddressValue(2, 100.0)
 
 	myHandler := New(testConfig, &myDb)
 
@@ -164,9 +176,11 @@ func TestPutValidRegister(t *testing.T) {
 	expected := 200
 
 	data := url.Values{}
-	data.Set("value", "100")
+	data.Add("value", "100")
 
-	request, _ := http.NewRequest(http.MethodPut, "/tag/ValidTag", strings.NewReader(data.Encode()))
+    fmt.Println(data)
+	request, _ := http.NewRequest(http.MethodPut, "/register/2", nil)
+    request.URL.RawQuery = data.Encode()
 	response := httptest.NewRecorder()
 
 	testHandler.handler.GetRegister(response, request)

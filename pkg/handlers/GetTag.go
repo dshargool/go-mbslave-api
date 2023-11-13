@@ -49,18 +49,9 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 				return
 
 			}
-			var divisor int
 
 			slog.Info("Updating tag " + tag + " with value " + strconv.FormatFloat(fValue, 'f', -1, 64))
-			rows := h.db.QueryRow("SELECT divisor FROM datapoints WHERE tag=$1", tag)
-			err = rows.Scan(&divisor)
-			if err != nil {
-				fmt.Println(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			_, err = h.db.Exec("UPDATE datapoints SET value = $1 WHERE tag = $2", fValue*float64(divisor), tag)
+			h.db.SetTagValue(tag, fValue)
 			if err != nil {
 				fmt.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)

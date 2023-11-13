@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -23,27 +24,60 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 	request := r.URL.Path
-	register := strings.TrimPrefix(request, "/register/")
-	// query := r.URL.Query()
+	addressStr := strings.TrimPrefix(request, "/register/")
+	fmt.Println(addressStr)
+	address, err := strconv.Atoi(addressStr)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	response, err := h.db.GetRowByAddress(address)
+	if err == sql.ErrNoRows {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	switch r.Method {
 	case "GET":
-		w.Header().Add("Content-Type", "application/json")
-		response, err := h.db.GetRowByRegister(string(register))
-		if err == sql.ErrNoRows {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusNotFound)
-			return
-		} else if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		slog.Debug("GET request for /register/<ADDRESS>", "address", register, "response", response)
+		slog.Debug("GET request for /register/<ADDRESS>", "address", address, "response", response)
 		response.Value = response.Value / response.Divisor
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+	case "PUT":
+		query := r.URL.Query()
+		value := query.Get("value")
+
+		if value == "" {
+			value = query.Get("val")
+		}
+		if value == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		fValue, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+
+		}
+		slog.Debug("PUT request for /register/<ADDRESS>", "address", address, "value", fValue)
+		h.db.SetAddressValue(address, fValue)
+		err = json.NewEncoder(w).Encode(response)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	default:
+		w.WriteHeader(http.StatusBadRequest)
 	}
 }
