@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dshargool/go-modbus-api.git/pkg/types"
+	"github.com/dshargool/go-mbslave-api.git/pkg/types"
 )
 
 type testHandler struct {
