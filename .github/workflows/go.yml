@@ -10,8 +10,10 @@ on:
     branches: [ "master" ]
 
 jobs:
-
   build:
+    strategy:
+      matrix:
+        os: [linux, windows]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -28,7 +30,17 @@ jobs:
         skip-pkg-cache: true
 
     - name: Build
-      run: go build -v ./...
+      env:
+        GOOS: ${{ matrix.os }}
+        GOARCH: amd64
+      run: go build -o go-mbslave-api-${{matrix.os}} -v
+
+    - name: Upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: go-mbslave-api
+        path: ./go-mbslave-api-${{matrix.os}}
+      
       
 
   test:
