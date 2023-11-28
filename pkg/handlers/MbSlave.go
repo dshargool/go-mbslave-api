@@ -3,14 +3,15 @@ package handlers
 import (
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/simonvetter/modbus"
 )
 
-func (h Handler) MbInit() *modbus.ModbusServer {
+func (h Handler) MbInit(port int) *modbus.ModbusServer {
 	mbServer, err := modbus.NewServer(&modbus.ServerConfiguration{
-		URL:        "tcp://0.0.0.0:5502",
+		URL:        "tcp://0.0.0.0:" + strconv.Itoa(port),
 		Timeout:    10 * time.Second,
 		MaxClients: 5,
 	}, &h)
@@ -65,15 +66,12 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 			}
 		} else {
 			slog.Debug("Reading holding registers", "address", regAddr)
-			row := h.db.QueryRow("SELECT value FROM datapoints WHERE address=$1", regAddr)
-			var value uint16
-
-			err := row.Scan(&value)
+			current, err := h.db.GetRowByAddress(int(regAddr))
 			if err != nil {
-				slog.Error("Unable to read from database", "address", regAddr, "error", err)
+				slog.Error("Unable to read from database", "address", regAddr, "error", err.Error())
 				return res, modbus.ErrIllegalDataAddress
 			}
-			res = append(res, value)
+			res = append(res, uint16(current.Value*current.Divisor))
 		}
 	}
 	return

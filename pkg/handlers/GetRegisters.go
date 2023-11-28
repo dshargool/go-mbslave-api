@@ -14,6 +14,7 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		w.Header().Add("Content-Type", "application/json")
+		// TODO: Replace this h.reg
 		err := json.NewEncoder(w).Encode(h.registers)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -25,7 +26,6 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 	request := r.URL.Path
 	addressStr := strings.TrimPrefix(request, "/register/")
-	fmt.Println(addressStr)
 	address, err := strconv.Atoi(addressStr)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -47,7 +47,6 @@ func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		slog.Debug("GET request for /register/<ADDRESS>", "address", address, "response", response)
-		response.Value = response.Value / response.Divisor
 		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -71,7 +70,7 @@ func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 
 		}
 		slog.Debug("PUT request for /register/<ADDRESS>", "address", address, "value", fValue)
-		h.db.SetAddressValue(address, fValue)
+		err = h.db.SetAddressValue(address, fValue)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
