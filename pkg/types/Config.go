@@ -6,15 +6,17 @@ import (
 )
 
 type ConfigurationData struct {
-	Port        int         `json:"port"`
+	ApiPort     int         `json:"api_port"`
+	ModbusPort  int         `json:"modbus_port"`
 	DBPath      string      `json:"db"`
 	Description string      `json:"description"`
 	Registers   []ModbusTag `json:"registers"`
 }
 type Configuration struct {
-	Port      int
-	DBPath    string
-	Registers map[OpcTag]ModbusTag
+	ApiPort    int
+	ModbusPort int
+	DBPath     string
+	Registers  map[OpcTag]ModbusTag
 }
 
 func (c Configuration) ReadConfig(fileName string) (Configuration, error) {
@@ -36,7 +38,8 @@ func (c Configuration) ReadConfig(fileName string) (Configuration, error) {
 func (c ConfigurationData) dataToConfiguration() Configuration {
 	config := Configuration{}
 	config.Registers = make(map[OpcTag]ModbusTag)
-	config.Port = c.Port
+	config.ApiPort = c.ApiPort
+	config.ModbusPort = c.ModbusPort
 	config.DBPath = c.DBPath
 	for _, reg := range c.Registers {
 		config.Registers[OpcTag(reg.Tag)] = reg
