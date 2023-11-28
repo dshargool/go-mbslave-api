@@ -71,7 +71,7 @@ func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 
 		}
 		slog.Debug("PUT request for /register/<ADDRESS>", "address", address, "value", fValue)
-		h.db.SetAddressValue(address, fValue)
+		err = h.db.SetAddressValue(address, fValue)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

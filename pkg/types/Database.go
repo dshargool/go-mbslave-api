@@ -45,7 +45,7 @@ func (db *SqlDb) UpdateTableTags(registers map[OpcTag]ModbusTag) {
 	for _, register := range registers {
 		err := db.QueryRow(queryStmt, &register.Address, &register.Description, &register.Tag, &register.Divisor).Scan(&register.Address)
 		if err != nil {
-			log.Println("failed to execute query", err)
+			slog.Error("failed to execute query", "error", err)
 			return
 		}
 	}

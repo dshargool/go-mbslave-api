@@ -3,14 +3,15 @@ package handlers
 import (
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/simonvetter/modbus"
 )
 
-func (h Handler) MbInit() *modbus.ModbusServer {
+func (h Handler) MbInit(port int) *modbus.ModbusServer {
 	mbServer, err := modbus.NewServer(&modbus.ServerConfiguration{
-		URL:        "tcp://0.0.0.0:5502",
+		URL:        "tcp://0.0.0.0:" + strconv.Itoa(port),
 		Timeout:    10 * time.Second,
 		MaxClients: 5,
 	}, &h)
