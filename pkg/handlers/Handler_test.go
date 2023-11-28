@@ -1,16 +1,21 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/dshargool/go-mbslave-api.git/pkg/types"
+	"github.com/simonvetter/modbus"
 )
 
 type testHandler struct {
-	handler Handler
+	handler   Handler
+	mb_client *modbus.ModbusClient
 }
 
 func setupTestSuite() testHandler {
@@ -49,13 +54,26 @@ func setupTestSuite() testHandler {
 
 	myHandler := New(testConfig, &myDb)
 
-	return testHandler{
-		handler: myHandler,
-	}
+	myHandler.MbSlave = myHandler.MbInit(testConfig.ModbusPort)
+	myHandler.MbStart()
+
+	client, _ := modbus.NewClient(&modbus.ClientConfiguration{
+		URL:     "tcp://localhost:" + strconv.Itoa(testConfig.ModbusPort),
+		Timeout: 1 * time.Second,
+	})
+    _ = client.Open()
+
+	var retHandler testHandler
+	retHandler.handler = myHandler
+	retHandler.mb_client = client
+
+	return retHandler
 }
 
-func (h testHandler) cleanUp() {
+func (h *testHandler) cleanUp() {
 	h.handler.db.DB.Close()
+	h.handler.MbStop()
+	h.mb_client.Close()
 }
 
 func TestGetRegisters(t *testing.T) {
@@ -207,6 +225,146 @@ func TestPutValidRegister(t *testing.T) {
 
 	if res != expected {
 		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestPutGetWriteback(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := 200.0
+
+	data := url.Values{}
+	data.Add("value", strconv.FormatFloat(expected, 'f', -1, 64))
+
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPut, "/register/2", nil)
+	request.URL.RawQuery = data.Encode()
+
+	testHandler.handler.GetRegister(response, request)
+	response = httptest.NewRecorder()
+
+	request, _ = http.NewRequest(http.MethodGet, "/register/2", nil)
+	testHandler.handler.GetRegister(response, request)
+
+	//_ := response.Result().StatusCode
+	dec := json.NewDecoder(response.Body)
+	var respValue types.ModbusResponse
+	_ = dec.Decode(&respValue)
+
+	if respValue.Value != expected {
+		t.Errorf("Got %.2f, expected %.2f", respValue.Value, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestModbusGetValidAddress(t *testing.T) {
+	testHandler := setupTestSuite()
+	var expected uint16 = 1000
+
+	mbClient := testHandler.mb_client
+	_ = mbClient.Open()
+
+	res, _ := mbClient.ReadRegister(2, modbus.HOLDING_REGISTER)
+	if res != expected {
+		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestModbusGetNullValueAddress(t *testing.T) {
+	testHandler := setupTestSuite()
+	var expected uint16 = 0
+
+	mbClient := testHandler.mb_client
+
+	res, _ := mbClient.ReadRegister(1, modbus.HOLDING_REGISTER)
+	if res != expected {
+		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestModbusGetUnknownAddress(t *testing.T) {
+	testHandler := setupTestSuite()
+	var expected uint16 = 0
+
+	mbClient := testHandler.mb_client
+
+	res, _ := mbClient.ReadRegister(3, modbus.HOLDING_REGISTER)
+	if res != expected {
+		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestModbusSetValidAddress(t *testing.T) {
+	testHandler := setupTestSuite()
+	var expected uint16 = 100
+
+	mbClient := testHandler.mb_client
+
+	_ = mbClient.WriteRegister(2, expected)
+	res, _ := mbClient.ReadRegister(2, modbus.HOLDING_REGISTER)
+	if res != expected {
+		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestModbusReadWriteback(t *testing.T) {
+	testHandler := setupTestSuite()
+	mbClient := testHandler.mb_client
+
+	expected, _ := mbClient.ReadRegister(2, modbus.HOLDING_REGISTER)
+	_ = mbClient.WriteRegister(2, expected)
+	res, _ := mbClient.ReadRegister(2, modbus.HOLDING_REGISTER)
+	if res != expected {
+		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestModbusWriteApiRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	mbClient := testHandler.mb_client
+
+	mbValue, _ := mbClient.ReadRegister(2, modbus.HOLDING_REGISTER)
+	_ = mbClient.WriteRegister(2, mbValue)
+
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/register/2", nil)
+	testHandler.handler.GetRegister(response, request)
+
+	//_ := response.Result().StatusCode
+	dec := json.NewDecoder(response.Body)
+	var apiValue types.ModbusResponse
+	_ = dec.Decode(&apiValue)
+
+	if uint16(apiValue.Value) != mbValue/uint16(apiValue.Divisor) {
+		t.Errorf("Got %.2f, expected %d", apiValue.Value, mbValue/uint16(apiValue.Divisor))
+	}
+	testHandler.cleanUp()
+}
+
+func TestApiWriteModbusRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	mbClient := testHandler.mb_client
+	expected := 200.0
+	var divisor uint16 = 10
+
+	data := url.Values{}
+	data.Add("value", strconv.FormatFloat(expected, 'f', -1, 64))
+
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPut, "/register/2", nil)
+	request.URL.RawQuery = data.Encode()
+
+	testHandler.handler.GetRegister(response, request)
+
+	mbValue, _ := mbClient.ReadRegister(2, modbus.HOLDING_REGISTER)
+
+	if uint16(expected) != mbValue/divisor {
+		t.Errorf("Got %d, expected %.2f", mbValue, expected*float64(divisor))
 	}
 	testHandler.cleanUp()
 }
