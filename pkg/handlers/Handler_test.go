@@ -15,9 +15,10 @@ type testHandler struct {
 
 func setupTestSuite() testHandler {
 	testConfig := types.Configuration{
-		Port:      8081,
-		DBPath:    "test/data/test.db",
-		Registers: map[types.OpcTag]types.ModbusTag{},
+		ApiPort:    8081,
+		ModbusPort: 5502,
+		DBPath:     "test/data/test.db",
+		Registers:  map[types.OpcTag]types.ModbusTag{},
 	}
 
 	myDb := types.SqlDb{}
