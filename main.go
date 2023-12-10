@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"log/slog"
@@ -12,7 +13,10 @@ import (
 var config = types.Configuration{}
 
 func main() {
-	config_path := "config.json"
+    configPtr := flag.String("config", "config.json", "Application file path")
+    flag.Parse()
+
+	config_path := *configPtr
 	slog.Info("Reading configuration file: " + config_path)
 
 	config, err := config.ReadConfig(config_path)
