@@ -21,6 +21,6 @@ RUN ldd $GOPATH/bin/go-mbslave-api
 
 
 FROM scratch
-COPY --from=builder /go/bin/go-mbslave-api go-mbslave-api
+COPY --from=builder /go/bin/go-mbslave-api /go/bin/go-mbslave-api
 COPY --from=builder /lib/ld-musl-x86_64.so.1 /lib/ld-musl-x86_64.so.1
-CMD ["go-mbslave-api"]
+ENTRYPOINT ["/go/bin/go-mbslave-api"]
