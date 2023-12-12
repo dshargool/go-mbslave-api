@@ -13,8 +13,8 @@ import (
 var config = types.Configuration{}
 
 func main() {
-    configPtr := flag.String("config", "config.json", "Application file path")
-    flag.Parse()
+	configPtr := flag.String("config", "config.json", "Application file path")
+	flag.Parse()
 
 	config_path := *configPtr
 	slog.Info("Reading configuration file: " + config_path)
