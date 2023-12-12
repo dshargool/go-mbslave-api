@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/dshargool/go-mbslave-api.git/pkg/types"
 )
 
 func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
@@ -15,7 +17,26 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		w.Header().Add("Content-Type", "application/json")
 		// TODO: Replace this h.reg
-		err := json.NewEncoder(w).Encode(h.registers)
+		var registers []types.ModbusResponse
+		for addr := range h.registers {
+			val, err := h.db.GetRowByTag(string(addr))
+			if err != nil {
+				slog.Error(err.Error())
+				reg := h.registers[addr]
+				empty_val := types.ModbusResponse{
+					Tag:         string(reg.Tag),
+					Description: reg.Description,
+					Address:     reg.Address,
+					Divisor:     float64(reg.Divisor),
+					Value:       -1.0,
+					LastUpdate:  "",
+				}
+				registers = append(registers, empty_val)
+			} else {
+				registers = append(registers, val)
+			}
+		}
+		err := json.NewEncoder(w).Encode(registers)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
