@@ -61,7 +61,7 @@ func setupTestSuite() testHandler {
 		URL:     "tcp://localhost:" + strconv.Itoa(testConfig.ModbusPort),
 		Timeout: 1 * time.Second,
 	})
-    _ = client.Open()
+	_ = client.Open()
 
 	var retHandler testHandler
 	retHandler.handler = myHandler
