@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/binary"
 	"errors"
 	"log/slog"
@@ -53,27 +54,29 @@ func (h *Handler) HandleDiscreteInputs(req *modbus.DiscreteInputsRequest) (res [
 
 func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (res []uint16, err error) {
 	// Write to DB entry with matching address.  Only update don't insert as the DbHandler should do the inserting of null values
-	slog.Info("Handling Holding Register", "req", req)
+	slog.Error("Handling Holding Register", "req", req)
 	for i := 0; i < int(req.Quantity); i++ {
 		regAddr := req.Addr + uint16(i)
-		current, err := h.db.GetRowByAddress(int(regAddr))
-		if err != nil {
+		dataType, err := h.db.GetDataTypeByAddress(int(regAddr))
+		if err != nil && !req.IsWrite || err == sql.ErrNoRows {
 			slog.Error("Unable to read row", "address", regAddr, "err", err)
 			return res, modbus.ErrProtocolError
 		}
-		num_regs, err := numRegsDataType(current.DataType)
+
+		num_regs, _ := numRegsDataType(dataType)
 		if req.IsWrite {
+			slog.Warn("Writing holding registers", "address", regAddr)
 			var data []uint16
 			for j := 0; j < int(num_regs); j++ {
 				data = append(data, req.Args[i+j])
 			}
-			conv_val, err := parseByteToDataType(current.DataType, req.Args)
+			conv_val, err := parseByteToDataType(dataType, req.Args)
 			slog.Info("Updating database with holding registers", "address", regAddr, "data", data, "value", conv_val)
 			if err != nil {
 				slog.Error("Unable to convert data type", "address", regAddr, "value", conv_val, "err", err)
 				return res, modbus.ErrProtocolError
 			}
-			_, err = h.db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", conv_val, regAddr)
+			err = h.db.SetAddressValue(int(regAddr), conv_val)
 			if err != nil {
 				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", conv_val, "err", err)
 				return res, modbus.ErrProtocolError
@@ -81,6 +84,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 			i = i + int(num_regs) - 1
 		} else {
 			slog.Warn("Reading holding registers", "address", regAddr)
+			current, err := h.db.GetRowByAddress(int(regAddr))
 			if err != nil {
 				slog.Error("Unable to read from database", "address", regAddr, "error", err.Error())
 				if h.AllowNullRegisters {
