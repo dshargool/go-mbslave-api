@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"encoding/binary"
+	"errors"
 	"log/slog"
+	"math"
 	"os"
 	"strconv"
 	"time"
@@ -50,28 +53,51 @@ func (h *Handler) HandleDiscreteInputs(req *modbus.DiscreteInputsRequest) (res [
 
 func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (res []uint16, err error) {
 	// Write to DB entry with matching address.  Only update don't insert as the DbHandler should do the inserting of null values
+	slog.Info("Handling Holding Register", "req", req)
 	for i := 0; i < int(req.Quantity); i++ {
 		regAddr := req.Addr + uint16(i)
+		current, err := h.db.GetRowByAddress(int(regAddr))
+		if err != nil {
+			slog.Error("Unable to read row", "address", regAddr, "err", err)
+			return res, modbus.ErrProtocolError
+		}
+		num_regs, err := numRegsDataType(current.DataType)
 		if req.IsWrite {
-			slog.Debug("Updating database with holding registers", "address", regAddr, "value", req.Args[i])
-			current, err := h.db.GetRowByAddress(int(regAddr))
+			var data []uint16
+			for j := 0; j < int(num_regs); j++ {
+				data = append(data, req.Args[i+j])
+			}
+			conv_val, err := parseByteToDataType(current.DataType, req.Args)
+			slog.Info("Updating database with holding registers", "address", regAddr, "data", data, "value", conv_val)
 			if err != nil {
-				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", req.Args[i], "err", err)
+				slog.Error("Unable to convert data type", "address", regAddr, "value", conv_val, "err", err)
 				return res, modbus.ErrProtocolError
 			}
-			_, err = h.db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", float64(req.Args[i])/current.Divisor, regAddr)
+			_, err = h.db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", conv_val, regAddr)
 			if err != nil {
-				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", req.Args[i], "err", err)
+				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", conv_val, "err", err)
 				return res, modbus.ErrProtocolError
 			}
+			i = i + int(num_regs) - 1
 		} else {
-			slog.Debug("Reading holding registers", "address", regAddr)
-			current, err := h.db.GetRowByAddress(int(regAddr))
+			slog.Warn("Reading holding registers", "address", regAddr)
 			if err != nil {
 				slog.Error("Unable to read from database", "address", regAddr, "error", err.Error())
-				return res, modbus.ErrIllegalDataAddress
+				if h.AllowNullRegisters {
+					slog.Warn("Setting Null Register to 0")
+					current.Value = 0
+					current.DataType = "uint16"
+				} else {
+					return res, modbus.ErrIllegalDataAddress
+				}
 			}
-			res = append(res, uint16(current.Value*current.Divisor))
+			conv_val, err := parseDataTypeToByte(current.DataType, float64(current.Value))
+			if err != nil {
+				slog.Error("Couldn't parse DataType", "DataType", current.DataType)
+			}
+			// Increment the addresses by the amount we're appending minus the regular increase
+			i = i + int(num_regs) - 1
+			res = append(res, conv_val...)
 		}
 	}
 	return
@@ -80,4 +106,76 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 func (h *Handler) HandleInputRegisters(req *modbus.InputRegistersRequest) (res []uint16, err error) {
 	slog.Warn("Not implemented!")
 	return
+}
+
+func parseDataTypeToByte(dataType string, value float64) (res []uint16, err error) {
+	switch dataType {
+	case "float32":
+		bits := math.Float32bits(float32(value))
+		res = append(res, uint16((bits>>16)&0xffff))
+		res = append(res, uint16((bits)&0xffff))
+	case "float64":
+		bits := math.Float64bits(value)
+		res = append(res, uint16(bits>>48)&0xffff)
+		res = append(res, uint16(bits>>32)&0xffff)
+		res = append(res, uint16(bits>>16)&0xffff)
+		res = append(res, uint16(bits)&0xffff)
+	case "int16":
+		res = append(res, uint16(int16(value)))
+	case "uint16":
+		res = append(res, uint16(value))
+	default:
+		return nil, errors.New("Can't parse dataType: " + dataType)
+	}
+	return res, nil
+}
+
+func parseByteToDataType(dataType string, bytes []uint16) (res float64, err error) {
+	switch dataType {
+	case "float32":
+		b := make([]byte, 4)
+		b[0] = byte(bytes[0] >> 8 & 0xff)
+		b[1] = byte(bytes[0] & 0xff)
+		b[2] = byte(bytes[1] >> 8 & 0xff)
+		b[3] = byte(bytes[1] & 0xff)
+
+		f_bits := binary.BigEndian.Uint32(b)
+		res = float64(math.Float32frombits(f_bits))
+	case "float64":
+		b := make([]byte, 8)
+		b[0] = byte(bytes[0] >> 8 & 0xff)
+		b[1] = byte(bytes[0] & 0xff)
+		b[2] = byte(bytes[1] >> 8 & 0xff)
+		b[3] = byte(bytes[1] & 0xff)
+		b[4] = byte(bytes[2] >> 8 & 0xff)
+		b[5] = byte(bytes[2] & 0xff)
+		b[6] = byte(bytes[3] >> 8 & 0xff)
+		b[7] = byte(bytes[3] & 0xff)
+
+		f_bits := binary.BigEndian.Uint64(b)
+		res = math.Float64frombits(f_bits)
+	case "int16":
+		res = float64(bytes[0])
+	case "uint16":
+		res = float64(bytes[0])
+	default:
+		return 0, errors.New("Can't parse dataType")
+	}
+	return res, nil
+}
+
+func numRegsDataType(dataType string) (res uint16, err error) {
+	switch dataType {
+	case "float32":
+		res = 2
+	case "float64":
+		res = 4
+	case "int16":
+		res = 1
+	case "uint16":
+		res = 1
+	default:
+		return 0, errors.New("Can't parse dataType: " + dataType)
+	}
+	return res, nil
 }

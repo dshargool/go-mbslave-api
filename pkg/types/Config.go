@@ -35,7 +35,7 @@ func (c Configuration) ReadConfig(fileName string) (Configuration, error) {
 		return Configuration{}, err
 	}
 	config := configData.dataToConfiguration()
-	slog.Info("Configuration found", config)
+	slog.Info("Configuration found", "config", config)
 	return config, nil
 }
 
