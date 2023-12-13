@@ -48,7 +48,8 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 
 			}
 
-			slog.Info("Updating tag " + tag + " with value " + strconv.FormatFloat(fValue, 'f', -1, 64))
+			slog.Info("Updating tag " + tag + " with value " +
+				strconv.FormatFloat(fValue, 'f', -1, 64))
 			err = h.db.SetTagValue(tag, fValue)
 			if err != nil {
 				slog.Error("Could not set tag value", err)
