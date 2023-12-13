@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -20,11 +19,11 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		response, err := h.db.GetRowByTag(tag)
 		if err == sql.ErrNoRows {
-			fmt.Println(err)
+			slog.Warn("Could not find row in database", "error", err)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		} else if err != nil {
-			fmt.Println(err)
+			slog.Warn("Database error", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -43,7 +42,7 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 		if value != "" {
 			fValue, err := strconv.ParseFloat(value, 64)
 			if err != nil {
-				fmt.Println(err)
+				slog.Error("Could not parse request value as float", err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 
@@ -52,7 +51,7 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 			slog.Info("Updating tag " + tag + " with value " + strconv.FormatFloat(fValue, 'f', -1, 64))
 			err = h.db.SetTagValue(tag, fValue)
 			if err != nil {
-				fmt.Println(err)
+				slog.Error("Could not set tag value", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
