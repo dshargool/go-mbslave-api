@@ -58,7 +58,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 	for i := 0; i < int(req.Quantity); i++ {
 		regAddr := req.Addr + uint16(i)
 		dataType, err := h.db.GetDataTypeByAddress(int(regAddr))
-		if err != nil && !req.IsWrite || err == sql.ErrNoRows {
+		if (err != nil && !req.IsWrite) || (err == sql.ErrNoRows && !h.AllowNullRegisters) {
 			slog.Error("Unable to read row", "address", regAddr, "err", err)
 			return res, modbus.ErrProtocolError
 		}
