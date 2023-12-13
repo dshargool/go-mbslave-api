@@ -21,7 +21,8 @@ func (db *SqlDb) Open(dbPath string) error {
 
 func (db *SqlDb) CreateTable() error {
 	var exists bool
-	if err := db.QueryRow("SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name='datapoints';").Scan(&exists); err != nil && err != sql.ErrNoRows {
+	if err := db.QueryRow("SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name='datapoints';").Scan(
+		&exists); err != nil && err != sql.ErrNoRows {
 		slog.Error("Failed to create new table", "error", err)
 		return err
 	}
@@ -45,7 +46,8 @@ func (db *SqlDb) UpdateTableTags(registers map[InstrumentTag]ModbusTag) {
     description=excluded.description, tag=excluded.tag, datatype=excluded.datatype
     RETURNING address;`
 	for _, register := range registers {
-		err := db.QueryRow(queryStmt, &register.Address, &register.Description, &register.Tag, &register.DataType).Scan(&register.Address)
+		err := db.QueryRow(queryStmt, &register.Address, &register.Description,
+			&register.Tag, &register.DataType).Scan(&register.Address)
 		if err != nil {
 			slog.Error("failed to execute query", "error", err)
 			return
