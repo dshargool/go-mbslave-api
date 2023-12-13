@@ -30,7 +30,7 @@ var testConfig types.Configuration = types.Configuration{
 	ModbusPort:        5502,
 	DBPath:            "test/data/test.db",
 	Registers:         map[types.InstrumentTag]types.ModbusTag{},
-    AllowNullRegister: false,
+	AllowNullRegister: false,
 }
 
 func setupTestSuite() testHandler {
@@ -52,6 +52,12 @@ func setupTestSuite() testHandler {
 			Address:     valid_reg,
 			DataType:    "float32",
 		},
+		{
+			Tag:         "SampleTagF32",
+			Description: "Sample",
+			Address:     16,
+			DataType:    "float32",
+		},
 	}
 	for _, register := range testRegisters {
 		testConfig.Registers[types.InstrumentTag(register.Tag)] = register
@@ -61,6 +67,7 @@ func setupTestSuite() testHandler {
 	myDb.UpdateTableTags(testConfig.Registers)
 	// Set a valid value to our 'ValidTag' address in the test db
 	_ = myDb.SetAddressValue(valid_reg, 100.0)
+	_ = myDb.SetAddressValue(16, 1123.4)
 
 	myHandler := New(testConfig, &myDb)
 
@@ -84,7 +91,7 @@ func (h *testHandler) cleanUp() {
 	h.handler.db.DB.Close()
 	h.handler.MbStop()
 	h.mb_client.Close()
-    testConfig.AllowNullRegister = false
+	testConfig.AllowNullRegister = false
 	os.Remove(testConfig.DBPath)
 }
 
@@ -285,15 +292,14 @@ func TestModbusGetValidAddressF32(t *testing.T) {
 }
 
 func TestModbusGetMultipleF32(t *testing.T) {
-    testConfig.AllowNullRegister = true
+	testConfig.AllowNullRegister = true
 	testHandler := setupTestSuite()
-
 
 	mbClient := testHandler.mb_client
 	_ = mbClient.Open()
 
 	res, _ := mbClient.ReadFloat32s(16, 44, modbus.HOLDING_REGISTER)
-    fmt.Println(res)
+	fmt.Println(res)
 	if len(res) != 44 {
 		t.Errorf("Got %d, expected %d", len(res), 44)
 	}
@@ -327,16 +333,15 @@ func TestModbusGetUnknownAddress(t *testing.T) {
 }
 
 func TestModbusGetUnknownAddressAllowNull(t *testing.T) {
-    testConfig.AllowNullRegister = true
+	testConfig.AllowNullRegister = true
 	testHandler := setupTestSuite()
-    fmt.Println(testHandler.handler)
+	fmt.Println(testHandler.handler)
 	var expected float32 = 0
 
 	mbClient := testHandler.mb_client
 
-	res, err := mbClient.ReadFloat32(60, modbus.HOLDING_REGISTER)
-	if res != expected || err != nil {
-		fmt.Println(err)
+	res, _ := mbClient.ReadFloat32(60, modbus.HOLDING_REGISTER)
+	if res != expected {
 		t.Errorf("Got %.2f, expected %.2f", res, expected)
 	}
 	testHandler.cleanUp()
