@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"os"
 
 	"github.com/dshargool/go-mbslave-api.git/pkg/handlers"
 	"github.com/dshargool/go-mbslave-api.git/pkg/types"
@@ -24,10 +25,16 @@ func main() {
 		log.Fatal("Error reading config ", err)
 	}
 	myDb := types.SqlDb{}
-	myDb.Open(config.DBPath)
+	err = myDb.Open(config.DBPath)
+	if err != nil {
+		os.Exit(1)
+	}
 	defer myDb.Close()
 
-	myDb.CreateTable()
+	err = myDb.CreateTable()
+	if err != nil {
+		os.Exit(1)
+	}
 	myDb.UpdateTableTags(config.Registers)
 
 	slog.Info("Starting modbus TCP slave")
