@@ -79,7 +79,7 @@ func (db *SqlDb) GetRowByAddress(address int) (response ModbusResponse, err erro
 }
 
 func (db *SqlDb) GetDataTypeByAddress(address int) (dataType string, err error) {
-	slog.Info("Getting DB Row", "address", address)
+	slog.Info("Getting DB Row Datatype", "address", address)
 	var db_dataType string
 	rows := db.QueryRow("SELECT datatype FROM datapoints WHERE address=$1", address)
 	err = rows.Scan(&db_dataType)
