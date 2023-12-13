@@ -55,15 +55,25 @@ func (h *Handler) HandleDiscreteInputs(req *modbus.DiscreteInputsRequest) (res [
 func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (res []uint16, err error) {
 	// Write to DB entry with matching address.  Only update don't insert as the DbHandler should do the inserting of null values
 	slog.Error("Handling Holding Register", "req", req)
+	var dataType string = "none"
 	for i := 0; i < int(req.Quantity); i++ {
 		regAddr := req.Addr + uint16(i)
-		dataType, err := h.db.GetDataTypeByAddress(int(regAddr))
-		if err != nil {
-			slog.Error("Unable to read row data type", "address", regAddr, "allow_null", h.AllowNullRegisters, "req", req, "err", err)
-			dataType = "float32"
+		if dataType == "none" {
+			dataType, err = h.db.GetDataTypeByAddress(int(regAddr))
+			if err != nil {
+				slog.Error("Unable to read row data type", "address", regAddr, "allow_null", h.AllowNullRegisters, "req", req, "err", err)
+				return res, modbus.ErrProtocolError
+			}
 		}
+        if req.Quantity % 2 != 0 {
+            dataType = "uint16"
+        }
 
-		num_regs, _ := numRegsDataType(dataType)
+		num_regs, err := numRegsDataType(dataType)
+        if err != nil {
+            slog.Error("Unable to calculate number of required registers for datatype.", "datatype", dataType, "num_regs", num_regs)
+            return res, modbus.ErrIllegalDataAddress
+        }
 
 		if req.IsWrite {
 			slog.Warn("Writing holding registers", "address", regAddr)
@@ -85,22 +95,21 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 			}
 
 			i = i + int(num_regs) - 1
-            
+
 		} else {
 			slog.Warn("Reading holding registers", "address", regAddr)
 			current, err := h.db.GetRowByAddress(int(regAddr))
 			if err != nil {
 				slog.Error("Unable to read from database", "address", regAddr, "error", err.Error())
-                fmt.Println(h.AllowNullRegisters)
+				fmt.Println(h.AllowNullRegisters)
 				if h.AllowNullRegisters {
 					slog.Warn("Setting Null Register to 0")
 					current.Value = 0
-					current.DataType = "float32"
 				} else {
 					return res, modbus.ErrIllegalDataAddress
 				}
 			}
-			conv_val, err := parseDataTypeToByte(current.DataType, float64(current.Value))
+			conv_val, err := parseDataTypeToByte(dataType, float64(current.Value))
 			if err != nil {
 				slog.Error("Couldn't parse DataType", "DataType", current.DataType)
 			}
