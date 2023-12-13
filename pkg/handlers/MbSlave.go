@@ -58,12 +58,12 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 	for i := 0; i < int(req.Quantity); i++ {
 		regAddr := req.Addr + uint16(i)
 		dataType, err := h.db.GetDataTypeByAddress(int(regAddr))
-        if err != nil && req.IsWrite == false || err == sql.ErrNoRows {
+		if err != nil && !req.IsWrite || err == sql.ErrNoRows {
 			slog.Error("Unable to read row", "address", regAddr, "err", err)
 			return res, modbus.ErrProtocolError
-        }
+		}
 
-		num_regs, err := numRegsDataType(dataType)
+		num_regs, _ := numRegsDataType(dataType)
 		if req.IsWrite {
 			slog.Warn("Writing holding registers", "address", regAddr)
 			var data []uint16
@@ -84,7 +84,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 			i = i + int(num_regs) - 1
 		} else {
 			slog.Warn("Reading holding registers", "address", regAddr)
-            current, err := h.db.GetRowByAddress(int(regAddr))
+			current, err := h.db.GetRowByAddress(int(regAddr))
 			if err != nil {
 				slog.Error("Unable to read from database", "address", regAddr, "error", err.Error())
 				if h.AllowNullRegisters {

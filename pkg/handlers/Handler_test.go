@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strconv"
 	"testing"
 	"time"
@@ -19,19 +20,20 @@ type testHandler struct {
 	mb_client *modbus.ModbusClient
 }
 
-var null_reg int = 2
-var valid_reg int = 4
+var (
+	null_reg  int = 2
+	valid_reg int = 4
+)
 
-
+var testConfig types.Configuration = types.Configuration{
+	ApiPort:    8081,
+	ModbusPort: 5502,
+	DBPath:     "test/data/test.db",
+	Registers:  map[types.InstrumentTag]types.ModbusTag{},
+}
 
 func setupTestSuite() testHandler {
 	fmt.Println("New test!")
-	testConfig := types.Configuration{
-		ApiPort:    8081,
-		ModbusPort: 5502,
-		DBPath:     "test/data/test.db",
-		Registers:  map[types.InstrumentTag]types.ModbusTag{},
-	}
 
 	myDb := types.SqlDb{}
 	_ = myDb.Open(testConfig.DBPath)
@@ -81,6 +83,7 @@ func (h *testHandler) cleanUp() {
 	h.handler.db.DB.Close()
 	h.handler.MbStop()
 	h.mb_client.Close()
+	os.Remove(testConfig.DBPath)
 }
 
 func TestGetRegisters(t *testing.T) {
