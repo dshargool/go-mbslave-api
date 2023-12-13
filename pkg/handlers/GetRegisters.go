@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -55,11 +54,11 @@ func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	response, err := h.db.GetRowByAddress(address)
 	if err == sql.ErrNoRows {
-		fmt.Println(err)
+		slog.Warn("Could not get row by address; row not found", err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
-		fmt.Println(err)
+		slog.Warn("Could not get row by address", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
