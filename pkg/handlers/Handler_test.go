@@ -26,10 +26,11 @@ var (
 )
 
 var testConfig types.Configuration = types.Configuration{
-	ApiPort:    8081,
-	ModbusPort: 5502,
-	DBPath:     "test/data/test.db",
-	Registers:  map[types.InstrumentTag]types.ModbusTag{},
+	ApiPort:           8081,
+	ModbusPort:        5502,
+	DBPath:            "test/data/test.db",
+	Registers:         map[types.InstrumentTag]types.ModbusTag{},
+    AllowNullRegister: false,
 }
 
 func setupTestSuite() testHandler {
@@ -83,6 +84,7 @@ func (h *testHandler) cleanUp() {
 	h.handler.db.DB.Close()
 	h.handler.MbStop()
 	h.mb_client.Close()
+    testConfig.AllowNullRegister = false
 	os.Remove(testConfig.DBPath)
 }
 
@@ -301,8 +303,24 @@ func TestModbusGetUnknownAddress(t *testing.T) {
 
 	mbClient := testHandler.mb_client
 
-	res, _ := mbClient.ReadRegister(60, modbus.HOLDING_REGISTER)
-	if res != expected {
+	res, err := mbClient.ReadRegister(60, modbus.HOLDING_REGISTER)
+	if res != expected && err == nil {
+		t.Errorf("Got %d, expected %d", res, expected)
+	}
+	testHandler.cleanUp()
+}
+
+func TestModbusGetUnknownAddressAllowNull(t *testing.T) {
+    testConfig.AllowNullRegister = true
+	testHandler := setupTestSuite()
+    fmt.Println(testHandler.handler)
+	var expected uint16 = 0
+
+	mbClient := testHandler.mb_client
+
+	res, err := mbClient.ReadRegister(60, modbus.HOLDING_REGISTER)
+	if res != expected || err != nil {
+		fmt.Println(err)
 		t.Errorf("Got %d, expected %d", res, expected)
 	}
 	testHandler.cleanUp()
