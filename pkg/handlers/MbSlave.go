@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"log/slog"
 	"math"
 	"os"
@@ -58,12 +58,13 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 	for i := 0; i < int(req.Quantity); i++ {
 		regAddr := req.Addr + uint16(i)
 		dataType, err := h.db.GetDataTypeByAddress(int(regAddr))
-		if (err != nil && !req.IsWrite) || (err == sql.ErrNoRows && !h.AllowNullRegisters) {
-			slog.Error("Unable to read row", "address", regAddr, "err", err)
-			return res, modbus.ErrProtocolError
+		if err != nil {
+			slog.Error("Unable to read row data type", "address", regAddr, "allow_null", h.AllowNullRegisters, "req", req, "err", err)
+			dataType = "uint16"
 		}
 
 		num_regs, _ := numRegsDataType(dataType)
+
 		if req.IsWrite {
 			slog.Warn("Writing holding registers", "address", regAddr)
 			var data []uint16
@@ -71,22 +72,26 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 				data = append(data, req.Args[i+j])
 			}
 			conv_val, err := parseByteToDataType(dataType, req.Args)
-			slog.Info("Updating database with holding registers", "address", regAddr, "data", data, "value", conv_val)
 			if err != nil {
 				slog.Error("Unable to convert data type", "address", regAddr, "value", conv_val, "err", err)
 				return res, modbus.ErrProtocolError
 			}
+
+			slog.Info("Updating database with holding registers", "address", regAddr, "data", data, "value", conv_val)
 			err = h.db.SetAddressValue(int(regAddr), conv_val)
 			if err != nil {
 				slog.Error("Unable to update database with holding registers", "address", regAddr, "value", conv_val, "err", err)
 				return res, modbus.ErrProtocolError
 			}
+
 			i = i + int(num_regs) - 1
+            
 		} else {
 			slog.Warn("Reading holding registers", "address", regAddr)
 			current, err := h.db.GetRowByAddress(int(regAddr))
 			if err != nil {
 				slog.Error("Unable to read from database", "address", regAddr, "error", err.Error())
+                fmt.Println(h.AllowNullRegisters)
 				if h.AllowNullRegisters {
 					slog.Warn("Setting Null Register to 0")
 					current.Value = 0
