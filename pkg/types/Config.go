@@ -2,21 +2,24 @@ package types
 
 import (
 	"encoding/json"
+	"log/slog"
 	"os"
 )
 
 type ConfigurationData struct {
-	ApiPort     int         `json:"api_port"`
-	ModbusPort  int         `json:"modbus_port"`
-	DBPath      string      `json:"db"`
-	Description string      `json:"description"`
-	Registers   []ModbusTag `json:"registers"`
+	ApiPort           int         `json:"api_port"`
+	ModbusPort        int         `json:"modbus_port"`
+	DBPath            string      `json:"db"`
+	Description       string      `json:"description"`
+	Registers         []ModbusTag `json:"registers"`
+	AllowNullRegister bool        `json:"allow_null_register"`
 }
 type Configuration struct {
-	ApiPort    int
-	ModbusPort int
-	DBPath     string
-	Registers  map[OpcTag]ModbusTag
+	ApiPort           int
+	ModbusPort        int
+	DBPath            string
+	AllowNullRegister bool
+	Registers         map[InstrumentTag]ModbusTag
 }
 
 func (c Configuration) ReadConfig(fileName string) (Configuration, error) {
@@ -32,17 +35,19 @@ func (c Configuration) ReadConfig(fileName string) (Configuration, error) {
 		return Configuration{}, err
 	}
 	config := configData.dataToConfiguration()
+	slog.Info("Configuration found", config)
 	return config, nil
 }
 
 func (c ConfigurationData) dataToConfiguration() Configuration {
 	config := Configuration{}
-	config.Registers = make(map[OpcTag]ModbusTag)
+	config.Registers = make(map[InstrumentTag]ModbusTag)
 	config.ApiPort = c.ApiPort
 	config.ModbusPort = c.ModbusPort
 	config.DBPath = c.DBPath
+	config.AllowNullRegister = c.AllowNullRegister
 	for _, reg := range c.Registers {
-		config.Registers[OpcTag(reg.Tag)] = reg
+		config.Registers[InstrumentTag(reg.Tag)] = reg
 	}
 	return config
 }

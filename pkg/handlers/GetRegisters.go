@@ -16,7 +16,6 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		w.Header().Add("Content-Type", "application/json")
-		// TODO: Replace this h.reg
 		var registers []types.ModbusResponse
 		for addr := range h.registers {
 			val, err := h.db.GetRowByTag(string(addr))
@@ -27,7 +26,7 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 					Tag:         string(reg.Tag),
 					Description: reg.Description,
 					Address:     reg.Address,
-					Divisor:     float64(reg.Divisor),
+					DataType:    reg.DataType,
 					Value:       -1.0,
 					LastUpdate:  "",
 				}
