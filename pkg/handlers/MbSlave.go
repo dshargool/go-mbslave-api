@@ -60,7 +60,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 		dataType, err := h.db.GetDataTypeByAddress(int(regAddr))
 		if err != nil {
 			slog.Error("Unable to read row data type", "address", regAddr, "allow_null", h.AllowNullRegisters, "req", req, "err", err)
-			dataType = "uint16"
+			dataType = "float32"
 		}
 
 		num_regs, _ := numRegsDataType(dataType)
@@ -95,7 +95,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 				if h.AllowNullRegisters {
 					slog.Warn("Setting Null Register to 0")
 					current.Value = 0
-					current.DataType = "uint16"
+					current.DataType = "float32"
 				} else {
 					return res, modbus.ErrIllegalDataAddress
 				}

@@ -284,6 +284,22 @@ func TestModbusGetValidAddressF32(t *testing.T) {
 	testHandler.cleanUp()
 }
 
+func TestModbusGetMultipleF32(t *testing.T) {
+    testConfig.AllowNullRegister = true
+	testHandler := setupTestSuite()
+
+
+	mbClient := testHandler.mb_client
+	_ = mbClient.Open()
+
+	res, _ := mbClient.ReadFloat32s(16, 44, modbus.HOLDING_REGISTER)
+    fmt.Println(res)
+	if len(res) != 44 {
+		t.Errorf("Got %d, expected %d", len(res), 44)
+	}
+	testHandler.cleanUp()
+}
+
 func TestModbusGetNullValueAddress(t *testing.T) {
 	testHandler := setupTestSuite()
 	var expected uint16 = 0
@@ -314,14 +330,14 @@ func TestModbusGetUnknownAddressAllowNull(t *testing.T) {
     testConfig.AllowNullRegister = true
 	testHandler := setupTestSuite()
     fmt.Println(testHandler.handler)
-	var expected uint16 = 0
+	var expected float32 = 0
 
 	mbClient := testHandler.mb_client
 
-	res, err := mbClient.ReadRegister(60, modbus.HOLDING_REGISTER)
+	res, err := mbClient.ReadFloat32(60, modbus.HOLDING_REGISTER)
 	if res != expected || err != nil {
 		fmt.Println(err)
-		t.Errorf("Got %d, expected %d", res, expected)
+		t.Errorf("Got %.2f, expected %.2f", res, expected)
 	}
 	testHandler.cleanUp()
 }
