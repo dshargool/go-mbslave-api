@@ -10,16 +10,18 @@ import (
 )
 
 type Handler struct {
-	registers map[types.OpcTag]types.ModbusTag
-	db        *types.SqlDb
-	MbSlave   *modbus.ModbusServer
+	registers          map[types.InstrumentTag]types.ModbusTag
+	db                 *types.SqlDb
+	MbSlave            *modbus.ModbusServer
+	AllowNullRegisters bool
 }
 
 func New(config types.Configuration, db *types.SqlDb) Handler {
 	return Handler{
-		registers: config.Registers,
-		db:        db,
-		MbSlave:   nil,
+		registers:          config.Registers,
+		db:                 db,
+		MbSlave:            nil,
+		AllowNullRegisters: config.AllowNullRegister,
 	}
 }
 
