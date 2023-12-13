@@ -199,7 +199,7 @@ func TestGetValidRegisterF32(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := 200
 
-	request, _ := http.NewRequest(http.MethodGet, "/register/3", nil)
+	request, _ := http.NewRequest(http.MethodGet, "/register/4", nil)
 	response := httptest.NewRecorder()
 
 	testHandler.handler.GetRegister(response, request)
@@ -218,7 +218,7 @@ func TestPutValidRegisterF32(t *testing.T) {
 	data := url.Values{}
 	data.Add("value", "100")
 
-	request, _ := http.NewRequest(http.MethodPut, "/register/3", nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/4", nil)
 	request.URL.RawQuery = data.Encode()
 	response := httptest.NewRecorder()
 
@@ -239,13 +239,13 @@ func TestPutGetWriteback(t *testing.T) {
 	data.Add("value", strconv.FormatFloat(expected, 'f', -1, 64))
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodPut, "/register/3", nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/4", nil)
 	request.URL.RawQuery = data.Encode()
 
 	testHandler.handler.GetRegister(response, request)
 	response = httptest.NewRecorder()
 
-	request, _ = http.NewRequest(http.MethodGet, "/register/3", nil)
+	request, _ = http.NewRequest(http.MethodGet, "/register/4", nil)
 	testHandler.handler.GetRegister(response, request)
 
 	//_ := response.Result().StatusCode
@@ -305,8 +305,8 @@ func TestModbusSetValidAddressF32(t *testing.T) {
 
 	mbClient := testHandler.mb_client
 
-	_ = mbClient.WriteFloat32(3, expected)
-	res, _ := mbClient.ReadFloat32(3, modbus.HOLDING_REGISTER)
+	_ = mbClient.WriteFloat32(4, expected)
+	res, _ := mbClient.ReadFloat32(4, modbus.HOLDING_REGISTER)
 	if res != expected {
 		t.Errorf("Got %.2f, expected %.2f", res, expected)
 	}
@@ -317,9 +317,9 @@ func TestModbusReadWritebackF32(t *testing.T) {
 	testHandler := setupTestSuite()
 	mbClient := testHandler.mb_client
 
-	expected, _ := mbClient.ReadFloat32(3, modbus.HOLDING_REGISTER)
-	_ = mbClient.WriteFloat32(3, expected)
-	res, _ := mbClient.ReadFloat32(3, modbus.HOLDING_REGISTER)
+	expected, _ := mbClient.ReadFloat32(4, modbus.HOLDING_REGISTER)
+	_ = mbClient.WriteFloat32(4, expected)
+	res, _ := mbClient.ReadFloat32(4, modbus.HOLDING_REGISTER)
 	if res != expected {
 		t.Errorf("Got %.2f, expected %.2f", res, expected)
 	}
@@ -330,11 +330,11 @@ func TestModbusWriteApiReadF32(t *testing.T) {
 	testHandler := setupTestSuite()
 	mbClient := testHandler.mb_client
 
-	mbValue, _ := mbClient.ReadFloat32(3, modbus.HOLDING_REGISTER)
-	_ = mbClient.WriteFloat32(3, mbValue)
+	mbValue, _ := mbClient.ReadFloat32(4, modbus.HOLDING_REGISTER)
+	_ = mbClient.WriteFloat32(4, mbValue)
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodGet, "/register/3", nil)
+	request, _ := http.NewRequest(http.MethodGet, "/register/4", nil)
 	testHandler.handler.GetRegister(response, request)
 
 	//_ := response.Result().StatusCode
@@ -357,12 +357,12 @@ func TestApiWriteModbusRead(t *testing.T) {
 	data.Add("value", strconv.FormatFloat(float64(expected), 'f', -1, 32))
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodPut, "/register/3", nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/4", nil)
 	request.URL.RawQuery = data.Encode()
 
 	testHandler.handler.GetRegister(response, request)
 
-	mbValue, _ := mbClient.ReadFloat32(3, modbus.HOLDING_REGISTER)
+	mbValue, _ := mbClient.ReadFloat32(4, modbus.HOLDING_REGISTER)
 
 	if expected != mbValue {
 		t.Errorf("Got %.2f, expected %.2f", mbValue, expected)
