@@ -78,6 +78,7 @@ func setupTestSuite() testHandler {
 		URL:     "tcp://localhost:" + strconv.Itoa(testConfig.ModbusPort),
 		Timeout: 1 * time.Second,
 	})
+    _ = client.SetEncoding(modbus.BIG_ENDIAN, modbus.LOW_WORD_FIRST)
 	_ = client.Open()
 
 	var retHandler testHandler

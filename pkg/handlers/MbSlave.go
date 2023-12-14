@@ -157,14 +157,14 @@ func parseDataTypeToByte(dataType string, value float64) (res []uint16, err erro
 	switch dataType {
 	case "float32":
 		bits := math.Float32bits(float32(value))
-		res = append(res, uint16((bits>>16)&0xffff))
 		res = append(res, uint16((bits)&0xffff))
+		res = append(res, uint16((bits>>16)&0xffff))
 	case "float64":
 		bits := math.Float64bits(value)
-		res = append(res, uint16(bits>>48)&0xffff)
-		res = append(res, uint16(bits>>32)&0xffff)
-		res = append(res, uint16(bits>>16)&0xffff)
 		res = append(res, uint16(bits)&0xffff)
+		res = append(res, uint16(bits>>16)&0xffff)
+		res = append(res, uint16(bits>>32)&0xffff)
+		res = append(res, uint16(bits>>48)&0xffff)
 	case "int16":
 		res = append(res, uint16(int16(value)))
 	case "uint16":
@@ -179,23 +179,23 @@ func parseByteToDataType(dataType string, bytes []uint16) (res float64, err erro
 	switch dataType {
 	case "float32":
 		b := make([]byte, 4)
-		b[0] = byte(bytes[0] >> 8 & 0xff)
-		b[1] = byte(bytes[0] & 0xff)
-		b[2] = byte(bytes[1] >> 8 & 0xff)
-		b[3] = byte(bytes[1] & 0xff)
+		b[0] = byte(bytes[1] >> 8 & 0xff)
+		b[1] = byte(bytes[1] & 0xff)
+		b[2] = byte(bytes[0] >> 8 & 0xff)
+		b[3] = byte(bytes[0] & 0xff)
 
 		f_bits := binary.BigEndian.Uint32(b)
 		res = float64(math.Float32frombits(f_bits))
 	case "float64":
 		b := make([]byte, 8)
-		b[0] = byte(bytes[0] >> 8 & 0xff)
-		b[1] = byte(bytes[0] & 0xff)
-		b[2] = byte(bytes[1] >> 8 & 0xff)
-		b[3] = byte(bytes[1] & 0xff)
-		b[4] = byte(bytes[2] >> 8 & 0xff)
-		b[5] = byte(bytes[2] & 0xff)
-		b[6] = byte(bytes[3] >> 8 & 0xff)
-		b[7] = byte(bytes[3] & 0xff)
+		b[0] = byte(bytes[3] >> 8 & 0xff)
+		b[1] = byte(bytes[3] & 0xff)
+		b[2] = byte(bytes[2] >> 8 & 0xff)
+		b[3] = byte(bytes[2] & 0xff)
+		b[4] = byte(bytes[1] >> 8 & 0xff)
+		b[5] = byte(bytes[1] & 0xff)
+		b[6] = byte(bytes[0] >> 8 & 0xff)
+		b[7] = byte(bytes[0] & 0xff)
 
 		f_bits := binary.BigEndian.Uint64(b)
 		res = math.Float64frombits(f_bits)
