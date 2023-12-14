@@ -299,7 +299,7 @@ func TestModbusGetMultipleF32(t *testing.T) {
 	_ = mbClient.Open()
 
 	res, err := mbClient.ReadRegisters(16, 88, modbus.HOLDING_REGISTER)
-    fmt.Println(res, err)
+	fmt.Println(res, err)
 	if len(res) != 88 {
 		t.Errorf("Got %d, expected %d", len(res), 88)
 	}
