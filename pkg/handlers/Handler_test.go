@@ -298,10 +298,10 @@ func TestModbusGetMultipleF32(t *testing.T) {
 	mbClient := testHandler.mb_client
 	_ = mbClient.Open()
 
-	res, _ := mbClient.ReadFloat32s(16, 44, modbus.HOLDING_REGISTER)
-	fmt.Println(res)
-	if len(res) != 44 {
-		t.Errorf("Got %d, expected %d", len(res), 44)
+	res, err := mbClient.ReadRegisters(16, 88, modbus.HOLDING_REGISTER)
+    fmt.Println(res, err)
+	if len(res) != 88 {
+		t.Errorf("Got %d, expected %d", len(res), 88)
 	}
 	testHandler.cleanUp()
 }
@@ -413,7 +413,7 @@ func TestApiWriteModbusRead(t *testing.T) {
 	mbValue, _ := mbClient.ReadFloat32(uint16(valid_reg), modbus.HOLDING_REGISTER)
 
 	if expected != mbValue {
-		t.Errorf("Got %.2f, expected %.2f", mbValue, expected)
+		t.Errorf("Got %.4f, expected %.4f", mbValue, expected)
 	}
 	testHandler.cleanUp()
 }
