@@ -139,6 +139,12 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 	}
 	slog.Info("HandleHoldingRegisters - Returning data",
 		"length", len(res), "request_len", req.Quantity, "error", err)
+
+	// Some devices will check for a portion of a register so we have to shorten our response to match
+	if len(res) > int(req.Quantity) {
+		slog.Warn("Shortening result to meet requested quantity")
+		res = res[:req.Quantity]
+	}
 	return res, nil
 }
 
