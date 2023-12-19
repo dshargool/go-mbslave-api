@@ -14,7 +14,6 @@ import (
 func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		w.Header().Add("Content-Type", "application/json")
 		var registers []types.ModbusResponse
 		for addr := range h.registers {
 			val, err := h.db.GetRowByTag(string(addr))
@@ -34,11 +33,15 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 				registers = append(registers, val)
 			}
 		}
-		err := json.NewEncoder(w).Encode(registers)
+        jRegister, err := json.Marshal(registers)
+        slog.Error("HERE")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		w.Header().Add("Content-Type", "application/plain-text")
+        w.Header().Add("Access-Control-Allow-Origin","*")
+        w.Write(jRegister)
 	}
 }
 
