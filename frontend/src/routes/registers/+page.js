@@ -8,7 +8,7 @@ export async function load({ fetch, params }) {
 	} else {
 		console.error('Failed to fetch data from PI');
 		return {
-			status: response.stats,
+			status: resp.status,
 			error: new Error('Failed to fetch data')
 		};
 	}
