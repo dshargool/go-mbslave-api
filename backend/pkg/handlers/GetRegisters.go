@@ -34,7 +34,6 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 			}
 		}
         jRegister, err := json.Marshal(registers)
-        slog.Error("HERE")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
