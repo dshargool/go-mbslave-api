@@ -14,8 +14,23 @@
         })
         data.data = data.data; // Refresh data
     }
+	import { invalidateAll } from '$app/navigation';
+	import { onMount } from 'svelte';
 
-    sortRegisters(1);
+	function rerunLoadFunction() {
+		// any of these will cause the `load` function to rerun
+		invalidateAll();
+	}
+
+    onMount(async () => {
+        setInterval(() => {
+            rerunLoadFunction();
+            sortRegisters(1);
+        }, 10000);
+    });
+
+
+
 </script>
 
 <main>
