@@ -29,6 +29,7 @@ func (h Handler) HandleRequests(port int) {
 	http.HandleFunc("/all_registers", h.GetRegisters)
 	http.HandleFunc("/tag/", h.GetTag)
 	http.HandleFunc("/register/", h.GetRegister)
+	http.HandleFunc("/healthcheck", h.Healthcheck)
 	if err := http.ListenAndServe(":"+strconv.Itoa(port), nil); err != nil {
 		log.Fatal(err)
 	}

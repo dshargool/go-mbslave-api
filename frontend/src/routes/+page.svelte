@@ -2,19 +2,32 @@
 	/** @type {import('./$types').PageData}*/
 	import { onMount } from 'svelte';
 
-	function getApiStatus() {
-		return true;
+	async function getApiStatus() {
+		try {
+			const response = await fetch('http://localhost:8081/healthcheck');
+
+			if (response.ok) {
+				// Request succeeded (status in the range of 200-299)
+				return true;
+			} else {
+				// Request failed (status outside the range of 200-299)
+				return false;
+			}
+		} catch (error) {
+			// Network error or other issues
+			console.error('Error occurred:', error);
+			return false;
+		}
 	}
 
-	function updateStatus() {
-		console.log('updating status');
-		const api_status = getApiStatus();
+	async function updateStatus() {
+		const api_status = await getApiStatus();
 		const elem = document.getElementById('api-status');
 		if (elem == null) {
 			return;
 		}
 
-		if (api_status == true) {
+		if (api_status) {
 			if (elem.classList.contains('badge-error')) {
 				elem.classList.remove('badge-error');
 			}

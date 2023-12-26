@@ -33,14 +33,14 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 				registers = append(registers, val)
 			}
 		}
-        jRegister, err := json.Marshal(registers)
+		jRegister, err := json.Marshal(registers)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		w.Header().Add("Content-Type", "application/plain-text")
-        w.Header().Add("Access-Control-Allow-Origin","*")
-        w.Write(jRegister)
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Write(jRegister)
 	}
 }
 
