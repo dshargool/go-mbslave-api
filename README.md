@@ -1,5 +1,5 @@
 # GO Modbus Slave API
-API to allow reads and writes to a central modbus slave to occur based on the OPC tag we want to interact with.  This allows both the API and an external modbus master to query the modbus slave to read/write data.
+API to allow reads and writes to a central modbus slave to occur based on the OPC tag we want to interact with.  This allows both the API and an external modbus master to query the modbus slave to read/write data.  A webpage is also available for users to view and configure the state of the system.
 
 ## Configuration file
 The configuration file has the format that outlines the equipment whose registers we want to translate.  The config file will translate into endpoints in the format:
@@ -75,3 +75,15 @@ The database stores the current data points; this allows us to consistently rebo
 There is a single main table for our data points.  The register address acts as our primary key.
 TABLE: datapoints
 Columns: address, description, datatype, value, last_updated
+
+## User Interface 
+A user interface is available at the default http/https ports; the user interface provides basic access to the the state internal to the system.
+
+### Homepage 
+The homepage of the user interface provides a single status indicator to allow a user to see whether the backend is functioning as expected.
+
+### Data 
+A printout of all datapoints configured with their current values and last update times.
+
+### Settings 
+A page to simplify the configuration of new datapoints.
