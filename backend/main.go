@@ -14,7 +14,8 @@ import (
 var config = types.Configuration{}
 
 func main() {
-	configPtr := flag.String("config", "config.json", "Application file path")
+	configPtr := flag.String("config", "config.json", "Config File Path")
+	dbPtr := flag.String("database", "", "Database File Path")
 	flag.Parse()
 
 	config_path := *configPtr
@@ -24,8 +25,17 @@ func main() {
 	if err != nil {
 		log.Fatal("Error reading config ", err)
 	}
+
+    db_path := *dbPtr
+
+    if db_path == "" {
+        db_path = config.DBPath
+    }
+	slog.Info("Opening database file: " + db_path)
+
+
 	myDb := types.SqlDb{}
-	err = myDb.Open(config.DBPath)
+	err = myDb.Open(db_path)
 	if err != nil {
 		os.Exit(1)
 	}

@@ -1,10 +1,11 @@
 <script>
 	/** @type {import('./$types').PageData}*/
 	import { onMount } from 'svelte';
+    import { page } from '$app/stores';
 
 	async function getApiStatus() {
 		try {
-			const response = await fetch('http://localhost:8081/healthcheck');
+			const response = await fetch($page.url.origin + '/api/healthcheck');
 
 			if (response.ok) {
 				// Request succeeded (status in the range of 200-299)

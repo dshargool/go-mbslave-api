@@ -1,6 +1,6 @@
 /** @type {import('./$types').PageLoad} */
 export async function load({ fetch, params }) {
-	const resp = await fetch('http://localhost:8081/all_registers');
+	const resp = await fetch('http://127.0.0.1:8081/all_registers');
 	if (resp.ok) {
 		const data = await resp.json();
 		return { data: data };
