@@ -28,13 +28,15 @@ jobs:
       env:
         GOOS: ${{ matrix.os }}
         GOARCH: amd64
-      run: go build -o go-mbslave-api-${{matrix.os}} -v
+      run: |
+        cd backend
+        go build -o go-mbslave-api-${{matrix.os}} -v
 
     - name: Upload
       uses: actions/upload-artifact@v3
       with:
         name: go-mbslave-api
-        path: ./go-mbslave-api-${{matrix.os}}
+        path: ./backend/go-mbslave-api-${{matrix.os}}
 
         
   build-docker:
