@@ -19,14 +19,15 @@
 	}
 
 	onMount(async () => {
+	    sortRegisters(1);
 		setInterval(() => {
-			invalidateAll();
-			sortRegisters(1);
+			invalidateAll().then(() => {
+				sortRegisters(1);
+			});
 		}, 10000);
 	});
 
 	// Start doing things
-	sortRegisters(1);
 </script>
 
 <main>

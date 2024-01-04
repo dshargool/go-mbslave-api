@@ -9,9 +9,9 @@
 	<div class="flex-1">
 		<a class="btn" href="/registers">Data</a>
 	</div>
-	<div class="flex-none">
+	<!--<div class="flex-none">
 		<a class="btn" href="/settings">Settings</a>
-	</div>
+	</div>-->
 </div>
 
 <slot />

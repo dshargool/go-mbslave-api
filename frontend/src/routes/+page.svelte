@@ -1,7 +1,7 @@
 <script>
 	/** @type {import('./$types').PageData}*/
 	import { onMount } from 'svelte';
-    import { page } from '$app/stores';
+	import { page } from '$app/stores';
 
 	async function getApiStatus() {
 		try {
