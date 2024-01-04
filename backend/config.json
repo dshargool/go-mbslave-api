@@ -1,7 +1,7 @@
 {
     "api_port": 8081,
     "modbus_port": 6502,
-    "db": "/db/test.db",
+    "db": "./db/test.db",
     "allow_null_register": true,
     "registers": [
         {
