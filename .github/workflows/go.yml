@@ -81,7 +81,7 @@ jobs:
         go build -o go-mbslave-api-${{matrix.os}} -v
 
     - name: Upload
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: go-mbslave-api
         path: ./backend/go-mbslave-api-${{matrix.os}}
@@ -122,7 +122,7 @@ jobs:
         outputs: type=docker,dest=/tmp/go-mbslave-api-server-container.tar
         
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: go-mbslave-api-server-container
         path: /tmp/go-mbslave-api-server-container.tar
@@ -162,7 +162,7 @@ jobs:
         outputs: type=docker,dest=/tmp/go-mbslave-api-container.tar
         
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: go-mbslave-api-container
         path: /tmp/go-mbslave-api-container.tar
@@ -173,13 +173,13 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [build-binary, build-api-docker, build-monolith-docker]
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
       - name: Download build artifact for release
         uses: actions/download-artifact@v4
-        with:
-          merge-multiple: true
-          pattern: go-mbslave-api* 
+
+      - name: List artifacts
+        run: |
+          ls -alR
+
       - name: Create release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
