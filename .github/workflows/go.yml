@@ -119,13 +119,13 @@ jobs:
         tags: go-mbslave-api-server:latest
         # Output a type=docker so we can load into docker.  
         # Alternative is type=oci which may be better but unknown to some users.
-        outputs: type=docker,dest=/tmp/go-mbslave-api-server-image.tar
+        outputs: type=docker,dest=/tmp/go-mbslave-api-server-container.tar
         
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: go-mbslave-api-server-container
-        path: /tmp/go-mbslave-api-server-image.tar
+        path: /tmp/go-mbslave-api-server-container.tar
       
   build-api-docker:
     needs: test 
@@ -159,13 +159,13 @@ jobs:
         tags: go-mbslave-api:latest
         # Output a type=docker so we can load into docker.  
         # Alternative is type=oci which may be better but unknown to some users.
-        outputs: type=docker,dest=/tmp/go-mbslave-api-image.tar
+        outputs: type=docker,dest=/tmp/go-mbslave-api-container.tar
         
     - name: Upload artifact
       uses: actions/upload-artifact@v3
       with:
         name: go-mbslave-api-container
-        path: /tmp/go-mbslave-api-image.tar
+        path: /tmp/go-mbslave-api-container.tar
       
   Release:
     name: Release
