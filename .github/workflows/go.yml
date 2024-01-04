@@ -81,6 +81,10 @@ jobs:
       
 
   test:
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -93,14 +97,18 @@ jobs:
     - name: Set up test sqlite db
       run: | 
         sudo apt-get install -y sqlite3
+        cd backend
         mkdir -p pkg/handlers/test/data
         sqlite3 pkg/handlers/test/data/test.db
         
     - name: Test
-      run: go test -v ./...
+      run: |
+        cd backend 
+        go test -v ./...
       
         
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3
       with:
+        working-directory: backend
         version: latest
