@@ -6,10 +6,58 @@ name: Go
 on:
   push:
     branches: [ "master" ]
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
+  release:
+    types:
+      - published
 
 jobs:
+  lint:
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21.1'
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        working-directory: backend
+        version: latest
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21.1'
+
+    - name: Set up test sqlite db
+      run: | 
+        sudo apt-get install -y sqlite3
+        cd backend
+        mkdir -p pkg/handlers/test/data
+        sqlite3 pkg/handlers/test/data/test.db
+        
+    - name: Test
+      run: |
+        cd backend 
+        go test -v ./...
+      
   build-binary:
     needs: test
     strategy:
@@ -45,6 +93,7 @@ jobs:
       
     steps:
     - uses: actions/checkout@v4
+
     - name: Log in to the Container registry
       uses: docker/login-action@v3
       with:
@@ -84,6 +133,7 @@ jobs:
       
     steps:
     - uses: actions/checkout@v4
+
     - name: Log in to the Container registry
       uses: docker/login-action@v3
       with:
@@ -117,35 +167,27 @@ jobs:
         name: go-mbslave-api-container
         path: /tmp/go-mbslave-api-image.tar
       
-  test:
-    permissions:
-      contents: read
-      pull-requests: read
-      checks: write
+  Release:
+    name: Release
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: Build
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21.1'
-
-    - name: Set up test sqlite db
-      run: | 
-        sudo apt-get install -y sqlite3
-        cd backend
-        mkdir -p pkg/handlers/test/data
-        sqlite3 pkg/handlers/test/data/test.db
-        
-    - name: Test
-      run: |
-        cd backend 
-        go test -v ./...
-      
-        
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        working-directory: backend
-        version: latest
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Download build artifact for release
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          pattern: go-mbslave-api* 
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          prerelease: true
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: | 
+            go-mbslave-api-linux 
+            go-mbslave-api-container.tar
+            go-mbslave-api-server-container.tar
