@@ -38,9 +38,13 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.Header().Add("Content-Type", "application/plain-text")
+		w.Header().Add("Content-Type", "application/json")
 		w.Header().Add("Access-Control-Allow-Origin", "*")
-		w.Write(jRegister)
+		_, err = w.Write(jRegister)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 	}
 }
 

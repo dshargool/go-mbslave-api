@@ -20,6 +20,6 @@ func (h Handler) Healthcheck(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Content-Type", "application/plain-text")
 	w.Header().Add("Access-Control-Allow-Origin", "*")
-    w.WriteHeader(http.StatusOK)
-    slog.Info("Healthcheck")
+	w.WriteHeader(http.StatusOK)
+	slog.Info("Healthcheck")
 }

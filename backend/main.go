@@ -26,13 +26,12 @@ func main() {
 		log.Fatal("Error reading config ", err)
 	}
 
-    db_path := *dbPtr
+	db_path := *dbPtr
 
-    if db_path == "" {
-        db_path = config.DBPath
-    }
+	if db_path == "" {
+		db_path = config.DBPath
+	}
 	slog.Info("Opening database file: " + db_path)
-
 
 	myDb := types.SqlDb{}
 	err = myDb.Open(db_path)
