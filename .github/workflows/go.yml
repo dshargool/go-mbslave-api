@@ -6,10 +6,58 @@ name: Go
 on:
   push:
     branches: [ "master" ]
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
+  release:
+    types:
+      - published
 
 jobs:
+  lint:
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21.1'
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        working-directory: backend
+        version: latest
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21.1'
+
+    - name: Set up test sqlite db
+      run: | 
+        sudo apt-get install -y sqlite3
+        cd backend
+        mkdir -p pkg/handlers/test/data
+        sqlite3 pkg/handlers/test/data/test.db
+        
+    - name: Test
+      run: |
+        cd backend 
+        go test -v ./...
+      
   build-binary:
     needs: test
     strategy:
@@ -28,21 +76,24 @@ jobs:
       env:
         GOOS: ${{ matrix.os }}
         GOARCH: amd64
-      run: go build -o go-mbslave-api-${{matrix.os}} -v
+      run: |
+        cd backend
+        go build -o go-mbslave-api-${{matrix.os}} -v
 
     - name: Upload
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: go-mbslave-api
-        path: ./go-mbslave-api-${{matrix.os}}
+        path: ./backend/go-mbslave-api-${{matrix.os}}
 
         
-  build-docker:
-    needs: build-binary
+  build-monolith-docker:
+    needs: test 
     runs-on: ubuntu-latest
       
     steps:
     - uses: actions/checkout@v4
+
     - name: Log in to the Container registry
       uses: docker/login-action@v3
       with:
@@ -58,47 +109,88 @@ jobs:
       with:
         context: .
         push: true
-        tags: ghcr.io/${{ github.repository }}:latest
+        tags: ghcr.io/${{ github.repository }}-server:latest
 
     - name: Build and export
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
-        tags: go-mbslave-api:latest
+        tags: go-mbslave-api-server:latest
         # Output a type=docker so we can load into docker.  
         # Alternative is type=oci which may be better but unknown to some users.
-        outputs: type=docker,dest=/tmp/go-mbslave-api-image.tar
+        outputs: type=docker,dest=/tmp/go-mbslave-api-server-container.tar
         
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
-        name: go-mbslave-api-container
-        path: /tmp/go-mbslave-api-image.tar
+        name: go-mbslave-api-server-container
+        path: /tmp/go-mbslave-api-server-container.tar
       
-      
-
-  test:
+  build-api-docker:
+    needs: test 
     runs-on: ubuntu-latest
+      
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
+    - name: Log in to the Container registry
+      uses: docker/login-action@v3
       with:
-        go-version: '1.21.1'
-
-    - name: Set up test sqlite db
-      run: | 
-        sudo apt-get install -y sqlite3
-        mkdir -p pkg/handlers/test/data
-        sqlite3 pkg/handlers/test/data/test.db
+        registry: https://ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: Test
-      run: go test -v ./...
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
       
-        
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
       with:
-        version: latest
+        context: backend
+        push: true
+        tags: ghcr.io/${{ github.repository }}:latest
+
+    - name: Build and export
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        tags: go-mbslave-api:latest
+        # Output a type=docker so we can load into docker.  
+        # Alternative is type=oci which may be better but unknown to some users.
+        outputs: type=docker,dest=/tmp/go-mbslave-api-container.tar
+        
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: go-mbslave-api-container
+        path: /tmp/go-mbslave-api-container.tar
+      
+  Release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [build-binary, build-api-docker, build-monolith-docker]
+    steps:
+      - name: Download build artifact for release
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts 
+          merge-multiple: true
+
+      - name: List artifacts
+        run: |
+          ls -alR
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          prerelease: true
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: | 
+            artifacts/go-mbslave-api-linux 
+            artifacts/go-mbslave-api-container.tar
+            artifacts/go-mbslave-api-server-container.tar
