@@ -21,8 +21,9 @@ type testHandler struct {
 }
 
 var (
-	null_reg  int = 2
-	valid_reg int = 4
+	null_reg    string = "2"
+	valid_reg   string = "4"
+	digital_reg string = "10"
 )
 
 var testConfig types.Configuration = types.Configuration{
@@ -55,8 +56,32 @@ func setupTestSuite() testHandler {
 		{
 			Tag:         "SampleTagF32",
 			Description: "Sample",
-			Address:     16,
+			Address:     "16",
 			DataType:    "float32",
+		},
+		{
+			Tag:         "SampleTagDigital0",
+			Description: "Digital1",
+			Address:     digital_reg + "_0",
+			DataType:    "digital_1",
+		},
+		{
+			Tag:         "SampleTagDigital1",
+			Description: "Digital2",
+			Address:     digital_reg + "_1",
+			DataType:    "digital_2",
+		},
+		{
+			Tag:         "SampleTagDigital2",
+			Description: "Digital3",
+			Address:     digital_reg + "_2",
+			DataType:    "digital_3",
+		},
+		{
+			Tag:         "SampleTagDigital3",
+			Description: "Digital4",
+			Address:     digital_reg + "_3",
+			DataType:    "digital_4",
 		},
 	}
 	for _, register := range testRegisters {
@@ -67,7 +92,8 @@ func setupTestSuite() testHandler {
 	myDb.UpdateTableTags(testConfig.Registers)
 	// Set a valid value to our 'ValidTag' address in the test db
 	_ = myDb.SetAddressValue(valid_reg, 100.0)
-	_ = myDb.SetAddressValue(16, 1123.4)
+	_ = myDb.SetAddressValue("16", 1123.4)
+	_ = myDb.SetAddressValue(digital_reg+"_0", 1)
 
 	myHandler := New(testConfig, &myDb)
 
@@ -133,7 +159,7 @@ func TestGetNullRegisterF32(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := 500
 
-	request, _ := http.NewRequest(http.MethodGet, "/register/"+strconv.Itoa(null_reg), nil)
+	request, _ := http.NewRequest(http.MethodGet, "/register/"+null_reg, nil)
 	response := httptest.NewRecorder()
 
 	testHandler.handler.GetRegister(response, request)
@@ -217,7 +243,7 @@ func TestGetValidRegisterF32(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := 200
 
-	request, _ := http.NewRequest(http.MethodGet, "/register/"+strconv.Itoa(valid_reg), nil)
+	request, _ := http.NewRequest(http.MethodGet, "/register/"+valid_reg, nil)
 	response := httptest.NewRecorder()
 
 	testHandler.handler.GetRegister(response, request)
@@ -236,7 +262,7 @@ func TestPutValidRegisterF32(t *testing.T) {
 	data := url.Values{}
 	data.Add("value", "100")
 
-	request, _ := http.NewRequest(http.MethodPut, "/register/"+strconv.Itoa(valid_reg), nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/"+valid_reg, nil)
 	request.URL.RawQuery = data.Encode()
 	response := httptest.NewRecorder()
 
@@ -257,13 +283,13 @@ func TestPutGetWriteback(t *testing.T) {
 	data.Add("value", strconv.FormatFloat(expected, 'f', -1, 64))
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodPut, "/register/"+strconv.Itoa(valid_reg), nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/"+valid_reg, nil)
 	request.URL.RawQuery = data.Encode()
 
 	testHandler.handler.GetRegister(response, request)
 	response = httptest.NewRecorder()
 
-	request, _ = http.NewRequest(http.MethodGet, "/register/"+strconv.Itoa(valid_reg), nil)
+	request, _ = http.NewRequest(http.MethodGet, "/register/"+valid_reg, nil)
 	testHandler.handler.GetRegister(response, request)
 
 	//_ := response.Result().StatusCode
@@ -284,8 +310,9 @@ func TestModbusGetValidAddressF32(t *testing.T) {
 	mbClient := testHandler.mb_client
 	_ = mbClient.Open()
 
-	_ = mbClient.WriteFloat32(uint16(null_reg), expected)
-	res, _ := mbClient.ReadFloat32(uint16(null_reg), modbus.HOLDING_REGISTER)
+	regAddr, _ := strconv.Atoi(null_reg)
+	_ = mbClient.WriteFloat32(uint16(regAddr), expected)
+	res, _ := mbClient.ReadFloat32(uint16(regAddr), modbus.HOLDING_REGISTER)
 	if res != expected {
 		t.Errorf("Got %.2f, expected %.2f", res, expected)
 	}
@@ -354,8 +381,9 @@ func TestModbusSetValidAddressF32(t *testing.T) {
 
 	mbClient := testHandler.mb_client
 
-	_ = mbClient.WriteFloat32(uint16(valid_reg), expected)
-	res, _ := mbClient.ReadFloat32(uint16(valid_reg), modbus.HOLDING_REGISTER)
+	regAddr, _ := strconv.Atoi(valid_reg)
+	_ = mbClient.WriteFloat32(uint16(regAddr), expected)
+	res, _ := mbClient.ReadFloat32(uint16(regAddr), modbus.HOLDING_REGISTER)
 	if res != expected {
 		t.Errorf("Got %.2f, expected %.2f", res, expected)
 	}
@@ -366,9 +394,10 @@ func TestModbusReadWritebackF32(t *testing.T) {
 	testHandler := setupTestSuite()
 	mbClient := testHandler.mb_client
 
-	expected, _ := mbClient.ReadFloat32(uint16(valid_reg), modbus.HOLDING_REGISTER)
-	_ = mbClient.WriteFloat32(uint16(valid_reg), expected)
-	res, _ := mbClient.ReadFloat32(uint16(valid_reg), modbus.HOLDING_REGISTER)
+	regAddr, _ := strconv.Atoi(valid_reg)
+	expected, _ := mbClient.ReadFloat32(uint16(regAddr), modbus.HOLDING_REGISTER)
+	_ = mbClient.WriteFloat32(uint16(regAddr), expected)
+	res, _ := mbClient.ReadFloat32(uint16(regAddr), modbus.HOLDING_REGISTER)
 	if res != expected {
 		t.Errorf("Got %.2f, expected %.2f", res, expected)
 	}
@@ -383,7 +412,7 @@ func TestModbusWriteApiReadF32(t *testing.T) {
 	_ = mbClient.WriteFloat32(4, mbValue)
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodGet, "/register/"+strconv.Itoa(valid_reg), nil)
+	request, _ := http.NewRequest(http.MethodGet, "/register/"+valid_reg, nil)
 	testHandler.handler.GetRegister(response, request)
 
 	//_ := response.Result().StatusCode
@@ -406,15 +435,63 @@ func TestApiWriteModbusRead(t *testing.T) {
 	data.Add("value", strconv.FormatFloat(float64(expected), 'f', -1, 32))
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodPut, "/register/"+strconv.Itoa(valid_reg), nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/"+valid_reg, nil)
 	request.URL.RawQuery = data.Encode()
 
 	testHandler.handler.GetRegister(response, request)
 
-	mbValue, _ := mbClient.ReadFloat32(uint16(valid_reg), modbus.HOLDING_REGISTER)
+	regAddr, _ := strconv.Atoi(valid_reg)
+	mbValue, _ := mbClient.ReadFloat32(uint16(regAddr), modbus.HOLDING_REGISTER)
 
 	if expected != mbValue {
 		t.Errorf("Got %.4f, expected %.4f", mbValue, expected)
+	}
+	testHandler.cleanUp()
+}
+func TestApiDigitalWriteRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := "1"
+
+	data := url.Values{}
+	data.Add("value", expected)
+
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPut, "/register/"+digital_reg+"_1", nil)
+	request.URL.RawQuery = data.Encode()
+
+	testHandler.handler.GetRegister(response, request)
+	response = httptest.NewRecorder()
+
+	request, _ = http.NewRequest(http.MethodGet, "/register/"+digital_reg+"_1", nil)
+	testHandler.handler.GetRegister(response, request)
+
+	dec := json.NewDecoder(response.Body)
+	var respValue types.ModbusResponse
+	_ = dec.Decode(&respValue)
+
+	valStr := strconv.FormatFloat(respValue.Value, 'f', -1, 64)
+	if expected != valStr {
+		t.Errorf("Got %s, expected %s", valStr, expected)
+	}
+	testHandler.cleanUp()
+}
+func TestApiDigitalWriteModbusRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := "1"
+	mbClient := testHandler.mb_client
+
+	data := url.Values{}
+	data.Add("value", expected)
+
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPut, "/register/"+digital_reg+"_0", nil)
+	testHandler.handler.GetRegister(response, request)
+
+	val, _ := mbClient.ReadRegister(10, modbus.HOLDING_REGISTER)
+	valStr := strconv.Itoa(int(val))
+
+	if expected != valStr {
+		t.Errorf("Got %s, expected %s", valStr, expected)
 	}
 	testHandler.cleanUp()
 }

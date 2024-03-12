@@ -50,21 +50,16 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 
 func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 	request := r.URL.Path
-	addressStr := strings.TrimPrefix(request, "/register/")
-	address, err := strconv.Atoi(addressStr)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	address := strings.TrimPrefix(request, "/register/")
 
 	w.Header().Add("Content-Type", "application/json")
 	response, err := h.db.GetRowByAddress(address)
 	if err == sql.ErrNoRows {
-		slog.Warn("Could not get row by address; row not found", err)
+		slog.Warn("Could not get row by address; row not found", "error", err, "address", address)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
-		slog.Warn("Could not get row by address", err)
+		slog.Warn("Could not get row by address", "err", err, "address", address)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/simonvetter/modbus"
@@ -63,7 +64,8 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 
 		// If our dataType is uninitialized we try to do it from the database.
 		// If it fails here we don't know what type of data to expect to read and it will fail
-		dataType, err = h.db.GetDataTypeByAddress(int(regAddr))
+		regStr := strconv.Itoa(int(regAddr))
+		dataType, err = h.db.GetDataTypeByAddress(regStr)
 		if err != nil && !h.AllowNullRegisters {
 			slog.Error("Unable to read row data type", "address", regAddr,
 				"allow_null", h.AllowNullRegisters, "req", req, "err", err)
@@ -81,7 +83,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 		}
 
 		if req.IsWrite {
-			slog.Info("Writing holding registers", "address", regAddr)
+			slog.Debug("Writing holding registers", "address", regAddr)
 
 			// Put our arguments that we're interested in into a new data slice
 			var data []uint16
@@ -96,11 +98,11 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 				return res, modbus.ErrProtocolError
 			}
 
-			slog.Info("Updating database with holding registers",
+			slog.Debug("Updating database with holding registers",
 				"address", regAddr, "data", data, "value", conv_val)
 
 			// Write the value we received into the DB
-			err = h.db.SetAddressValue(int(regAddr), conv_val)
+			err = h.db.SetAddressValue(regStr, conv_val)
 			if err != nil {
 				slog.Error("Unable to update database with holding registers",
 					"address", regAddr, "value", conv_val, "err", err)
@@ -108,15 +110,15 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 			}
 
 		} else {
-			slog.Info("Reading holding registers", "address", regAddr)
+			slog.Debug("Reading holding registers", "address", regAddr)
 
 			// Get the current value from the database
-			current, err := h.db.GetRowByAddress(int(regAddr))
+			current, err := h.db.GetRowByAddress(regStr)
 			if err != nil {
 				// When we don't have a database value but allow null registers we return a 0
 				// if we don't allow null values it's considered an illegal data address
 				if h.AllowNullRegisters {
-					slog.Warn("Setting Null Register to 0")
+					slog.Debug("Setting Null Register to 0")
 					current.Value = 0
 				} else {
 					slog.Error("Unable to read from database",
@@ -131,7 +133,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 				slog.Error("Couldn't parse DataType to Byte",
 					"DataType", dataType)
 			}
-			slog.Info("Adding value to result", "value", conv_val)
+			slog.Debug("Adding value to result", "value", conv_val)
 			res = append(res, conv_val...)
 		}
 		// Increment the addresses by the amount we're appending
@@ -153,7 +155,24 @@ func (h *Handler) HandleInputRegisters(req *modbus.InputRegistersRequest) (res [
 	return
 }
 
+func getDigitalDigit(dataType string) int {
+	if strings.Contains(dataType, "digital") {
+		split := strings.Split(dataType, "_")
+		if len(split) <= 1 {
+			return 0
+		}
+		digit, _ := strconv.Atoi(split[1])
+		return digit - 1
+	} else {
+		return 0
+	}
+
+}
+
 func parseDataTypeToByte(dataType string, value float64) (res []uint16, err error) {
+	// Split the string on the digital delimiter so we can always have the clean string.
+	// If the delimiter doesn't exist there's no change
+	dataType = strings.Split(dataType, "_")[0]
 	switch dataType {
 	case "float32":
 		bits := math.Float32bits(float32(value))
@@ -169,6 +188,8 @@ func parseDataTypeToByte(dataType string, value float64) (res []uint16, err erro
 		res = append(res, uint16(int16(value)))
 	case "uint16":
 		res = append(res, uint16(value))
+	case "digital":
+		res = append(res, uint16(value))
 	default:
 		return nil, errors.New("Can't parse dataType: " + dataType)
 	}
@@ -176,6 +197,7 @@ func parseDataTypeToByte(dataType string, value float64) (res []uint16, err erro
 }
 
 func parseByteToDataType(dataType string, bytes []uint16) (res float64, err error) {
+	dataType = strings.Split(dataType, "_")[0]
 	switch dataType {
 	case "float32":
 		b := make([]byte, 4)
@@ -203,6 +225,8 @@ func parseByteToDataType(dataType string, bytes []uint16) (res float64, err erro
 		res = float64(bytes[0])
 	case "uint16":
 		res = float64(bytes[0])
+	case "digital":
+		res = float64(bytes[0])
 	default:
 		return 0, errors.New("Can't parse dataType")
 	}
@@ -210,6 +234,7 @@ func parseByteToDataType(dataType string, bytes []uint16) (res float64, err erro
 }
 
 func numRegsDataType(dataType string) (res uint16, err error) {
+	dataType = strings.Split(dataType, "_")[0]
 	switch dataType {
 	case "float32":
 		res = 2
@@ -218,6 +243,8 @@ func numRegsDataType(dataType string) (res uint16, err error) {
 	case "int16":
 		res = 1
 	case "uint16":
+		res = 1
+	case "digital":
 		res = 1
 	default:
 		return 0, errors.New("Can't parse dataType: " + dataType)
