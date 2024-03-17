@@ -2,6 +2,7 @@ package types
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -117,11 +118,74 @@ func (db *SqlDb) SetTagValue(tag string, value float64) error {
 	return nil
 }
 
+func (db *SqlDb) SetGenericBitAddress(address string, value float64) error{
+        genAddress := strings.Split(address, "_")[0]
+		digitShift, err := strconv.Atoi(strings.Split(address, "_")[1])
+		if err != nil {
+			return err
+		}
+
+        slog.Debug("Setting generic address", "addr", genAddress, "shift", digitShift, "value", value)
+		currRow, err := db.GetRowByAddress(genAddress)
+		currVal := uint64(currRow.Value)
+		intVal := uint64(value)
+		if err != nil && err == sql.ErrNoRows {
+            slog.Error("FAILED TO GET ROW", "err", err, "row", currRow)
+			return err
+		} else if err != nil {
+            currVal = 0
+        }
+        
+        if intVal > 0 {
+		    currVal |= 1 << uint64(digitShift)
+        } else {
+		    currVal &= 0 << uint64(digitShift)
+        }
+
+	    slog.Debug("Setting generic DB Row", "address", genAddress, "value", currVal)
+		_, err = db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", currVal, genAddress)
+		if err != nil {
+			return err
+		}
+        return nil
+}
+
+func (db *SqlDb) GetGenericBitAddress(address string) (value int, err error) {
+    splitStr := strings.Split(address, "_")
+    genAddress := splitStr[0]
+    if len(splitStr) == 1{
+        return 0, errors.New("Length of address string does not contain digit information")
+    }
+	digitShift, err := strconv.Atoi(strings.Split(address, "_")[1])
+	if err != nil {
+		return 0, err
+	}
+
+    current, err := db.GetRowByAddress(genAddress)
+
+    value = (int(current.Value) >> digitShift) & 1
+
+    if err != nil {
+        slog.Error("Could not find generic address", "addr", genAddress)
+    }
+
+    return value, nil
+}
+
 func (db *SqlDb) GetRowByAddress(address string) (response ModbusResponse, err error) {
 	slog.Debug("Getting DB Row", "address", address)
 	rows := db.QueryRow("SELECT address,tag,description,datatype,value,last_update FROM datapoints WHERE address=$1", address)
 	err = rows.Scan(&response.Address, &response.Tag, &response.Description, &response.DataType, &response.Value, &response.LastUpdate)
-
+    if err != nil && strings.Contains(err.Error(), "NULL to float64") && strings.Contains(response.DataType, "digital") && strings.Contains(response.Address, "_") {
+        err = nil
+        genValue, err := db.GetGenericBitAddress(response.Address)
+        if err != nil {
+            return response, err
+        }
+        response.Value = float64(genValue)
+    } else {
+        return response, err
+    }
 	return
 }
 
@@ -145,7 +209,7 @@ func (db *SqlDb) GetDataTypeByAddress(address string) (dataType string, err erro
 }
 
 func (db *SqlDb) SetAddressValue(address string, value float64) error {
-	slog.Error("Setting DB Row", "address", address, "value", value)
+	slog.Info("Setting DB Row", "address", address, "value", value)
 	_, err := db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", value, address)
 	if err != nil {
 		return err
@@ -156,36 +220,45 @@ func (db *SqlDb) SetAddressValue(address string, value float64) error {
     }
 	// If we are sure this is a digital address
 	if strings.Contains(dataType, "digital") && strings.Contains(address, "_") {
-        genAddress := strings.Split(address, "_")[0]
-		digitShift, err := strconv.Atoi(strings.Split(address, "_")[1])
-		if err != nil {
-			return err
-		}
-
-        slog.Error("Setting generic address", "addr", genAddress, "shift", digitShift, "value", value)
-		currRow, err := db.GetRowByAddress(genAddress)
-		currVal := uint64(currRow.Value)
-		intVal := uint64(value)
-		if err != nil && err == sql.ErrNoRows {
-            slog.Error("FAILED TO GET ROW", "err", err, "row", currRow)
-			return err
-		} else if err != nil {
-            currVal = 0
-        }
-        
-        slog.Error("Value before", "val", currVal, "anded", intVal, "shift", digitShift)
-        if intVal > 0 {
-		    currVal |= 1 << uint64(digitShift)
-        } else {
-		    currVal &= 0 << uint64(digitShift)
-        }
-        slog.Error("Value after", "val", currVal, "anded", intVal)
-
-	    slog.Error("Setting generic DB Row", "address", genAddress, "value", currVal)
-		_, err = db.Exec("UPDATE datapoints SET value = $1 WHERE address = $2", currVal, genAddress)
-		if err != nil {
-			return err
-		}
+        _ = db.SetGenericBitAddress(address, value)
 	}
 	return nil
+}
+
+func (db *SqlDb) PropogateValueSubAddressDigital(address string) error {
+    slog.Error("Propogation Nation for"+address)
+    currentData, err := db.GetRowByAddress(address)
+    if err != nil {
+        return err
+    }
+
+    newValue := uint64(currentData.Value)
+
+    rows, err := db.Query("SELECT address FROM datapoints WHERE address LIKE $1", address+"_%")
+    if err != nil {
+        slog.Error("No rows!")
+        return err
+    }
+    defer rows.Close()
+
+    var fullAddress string
+    for rows.Next(){
+        err := rows.Scan(&fullAddress)
+        slog.Error("Got row", "addr", fullAddress)
+        if err != nil {
+            return err
+        }
+
+        digit, err := strconv.Atoi(strings.Split(fullAddress, "_")[1])
+        if err != nil {
+            return err
+        }
+        valToSet := newValue & 1 << digit
+        err = db.SetAddressValue(fullAddress, float64(valToSet))
+        if err != nil {
+            return err
+        }
+    }
+    slog.Error("Out of rows")
+    return nil
 }

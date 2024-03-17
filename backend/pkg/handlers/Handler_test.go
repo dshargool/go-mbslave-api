@@ -501,7 +501,7 @@ func TestApiDigitalWriteModbusRead(t *testing.T) {
 	}
 	testHandler.cleanUp()
 }
-/*func TestModbusDigitalWriteApiRead(t *testing.T) {
+func TestModbusDigitalWriteApiRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "1"
 	mbClient := testHandler.mb_client
@@ -521,4 +521,4 @@ func TestApiDigitalWriteModbusRead(t *testing.T) {
 		t.Errorf("Got %s, expected %s", valStr, expected)
 	}
 	testHandler.cleanUp()
-}*/
+}
