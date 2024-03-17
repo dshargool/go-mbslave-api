@@ -81,11 +81,13 @@ func (db *SqlDb) UpdateTableTags(registers map[InstrumentTag]ModbusTag) {
 
 func (db *SqlDb) GetRowByTag(tag string) (response ModbusResponse, err error) {
 	slog.Debug("Getting DB Row", "tag", tag)
-	rows := db.QueryRow("SELECT address,tag,description,datatype,value,last_update FROM datapoints WHERE tag=$1", tag)
-	err = rows.Scan(&response.Address, &response.Tag, &response.Description, &response.DataType, &response.Value, &response.LastUpdate)
-
-	return
+    addr, err := db.GetAddressByTag(tag)
+    if err != nil {
+        return response, err
+    }
+    return db.GetRowByAddress(addr)
 }
+
 func (db *SqlDb) GetAddressByTag(tag string) (response string, err error) {
     var resp ModbusResponse
 	slog.Debug("Getting DB Row", "tag", tag)
