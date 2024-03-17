@@ -526,9 +526,10 @@ func TestMultipleModbusDigitalWriteApiRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "0"
 	mbClient := testHandler.mb_client
-    reg := digital_reg + "_1"
+    reg := digital_reg + "_2"
 
     _ = mbClient.WriteRegister(10, 5)
+    _ = mbClient.WriteRegister(10, 3)
 
     response := httptest.NewRecorder()
     request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
@@ -543,7 +544,7 @@ func TestMultipleModbusDigitalWriteApiRead(t *testing.T) {
 	}
 	testHandler.cleanUp()
 }
-func TestMultipleModbusDigitalWriteApiTagRead(t *testing.T) {
+func TestModbusDigitalWriteApiTagRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "1"
 	mbClient := testHandler.mb_client
@@ -558,6 +559,28 @@ func TestMultipleModbusDigitalWriteApiTagRead(t *testing.T) {
 	var respValue types.ModbusResponse
 	_ = dec.Decode(&respValue)
 	valStr := strconv.FormatFloat(respValue.Value, 'f', -1, 64)
+
+	if expected != valStr {
+		t.Errorf("Got %s, expected %s", valStr, expected)
+	}
+	testHandler.cleanUp()
+}
+func TestApiTagWriteModbusRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := "5"
+	mbClient := testHandler.mb_client
+    reg := "SampleTagDigital2" 
+
+	data := url.Values{}
+	data.Add("value", "1")
+
+    response := httptest.NewRecorder()
+    request, _ := http.NewRequest(http.MethodPut, "/tag/"+reg, nil)
+	request.URL.RawQuery = data.Encode()
+	testHandler.handler.GetTag(response, request)
+
+	val, _ := mbClient.ReadRegister(10, modbus.HOLDING_REGISTER)
+	valStr := strconv.Itoa(int(val))
 
 	if expected != valStr {
 		t.Errorf("Got %s, expected %s", valStr, expected)
