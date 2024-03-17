@@ -522,3 +522,45 @@ func TestModbusDigitalWriteApiRead(t *testing.T) {
 	}
 	testHandler.cleanUp()
 }
+func TestMultipleModbusDigitalWriteApiRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := "0"
+	mbClient := testHandler.mb_client
+    reg := digital_reg + "_1"
+
+    _ = mbClient.WriteRegister(10, 5)
+
+    response := httptest.NewRecorder()
+    request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
+	testHandler.handler.GetRegister(response, request)
+	dec := json.NewDecoder(response.Body)
+	var respValue types.ModbusResponse
+	_ = dec.Decode(&respValue)
+	valStr := strconv.FormatFloat(respValue.Value, 'f', -1, 64)
+
+	if expected != valStr {
+		t.Errorf("Got %s, expected %s", valStr, expected)
+	}
+	testHandler.cleanUp()
+}
+func TestMultipleModbusDigitalWriteApiTagRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := "1"
+	mbClient := testHandler.mb_client
+    reg := "SampleTagDigital2" 
+
+    _ = mbClient.WriteRegister(10, 5)
+
+    response := httptest.NewRecorder()
+    request, _ := http.NewRequest(http.MethodGet, "/tag/"+reg, nil)
+	testHandler.handler.GetTag(response, request)
+	dec := json.NewDecoder(response.Body)
+	var respValue types.ModbusResponse
+	_ = dec.Decode(&respValue)
+	valStr := strconv.FormatFloat(respValue.Value, 'f', -1, 64)
+
+	if expected != valStr {
+		t.Errorf("Got %s, expected %s", valStr, expected)
+	}
+	testHandler.cleanUp()
+}
