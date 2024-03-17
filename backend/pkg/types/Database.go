@@ -119,13 +119,14 @@ func (db *SqlDb) SetTagValue(tag string, value float64) error {
 
 func (db *SqlDb) GetRowByAddress(address string) (response ModbusResponse, err error) {
 	slog.Debug("Getting DB Row", "address", address)
-	rows := db.QueryRow("SELECT address,tag,description,datatype,COALESCE(value, 0),last_update FROM datapoints WHERE address=$1", address)
+	rows := db.QueryRow("SELECT address,tag,description,datatype,value,last_update FROM datapoints WHERE address=$1", address)
 	err = rows.Scan(&response.Address, &response.Tag, &response.Description, &response.DataType, &response.Value, &response.LastUpdate)
 
 	return
 }
 
 func (db *SqlDb) GetDataTypeByTag(tag string) (dataType string, err error) {
+
 	slog.Debug("Getting DB Row Datatype", "tag", tag)
 	var db_dataType string = "none"
 	rows := db.QueryRow("SELECT datatype FROM datapoints WHERE tag=$1", tag)
@@ -149,8 +150,12 @@ func (db *SqlDb) SetAddressValue(address string, value float64) error {
 	if err != nil {
 		return err
 	}
-	// If we are fairly sure this is a digital address
-	if strings.Contains(address, "_") {
+    dataType, err := db.GetDataTypeByAddress(address)
+    if err != nil {
+        return err
+    }
+	// If we are sure this is a digital address
+	if strings.Contains(dataType, "digital") && strings.Contains(address, "_") {
         genAddress := strings.Split(address, "_")[0]
 		digitShift, err := strconv.Atoi(strings.Split(address, "_")[1])
 		if err != nil {
@@ -168,7 +173,7 @@ func (db *SqlDb) SetAddressValue(address string, value float64) error {
             currVal = 0
         }
         
-        slog.Error("Value before", "val", currVal, "anded", intVal)
+        slog.Error("Value before", "val", currVal, "anded", intVal, "shift", digitShift)
         if intVal > 0 {
 		    currVal |= 1 << uint64(digitShift)
         } else {

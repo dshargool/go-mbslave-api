@@ -61,27 +61,27 @@ func setupTestSuite() testHandler {
 		},
 		{
 			Tag:         "SampleTagDigital0",
-			Description: "Digital1",
+			Description: "Digital0",
 			Address:     digital_reg + "_0",
-			DataType:    "digital_1",
+			DataType:    "digital_0",
 		},
 		{
 			Tag:         "SampleTagDigital1",
-			Description: "Digital2",
+			Description: "Digital1",
 			Address:     digital_reg + "_1",
-			DataType:    "digital_2",
+			DataType:    "digital_1",
 		},
 		{
 			Tag:         "SampleTagDigital2",
-			Description: "Digital3",
+			Description: "Digital2",
 			Address:     digital_reg + "_2",
-			DataType:    "digital_3",
+			DataType:    "digital_2",
 		},
 		{
 			Tag:         "SampleTagDigital3",
-			Description: "Digital4",
+			Description: "Digital3",
 			Address:     digital_reg + "_3",
-			DataType:    "digital_4",
+			DataType:    "digital_3",
 		},
 	}
 	for _, register := range testRegisters {
@@ -282,13 +282,14 @@ func TestPutGetWriteback(t *testing.T) {
 	data := url.Values{}
 	data.Add("value", strconv.FormatFloat(expected, 'f', -1, 64))
 
+    // Set value
 	response := httptest.NewRecorder()
 	request, _ := http.NewRequest(http.MethodPut, "/register/"+valid_reg, nil)
 	request.URL.RawQuery = data.Encode()
-
 	testHandler.handler.GetRegister(response, request)
-	response = httptest.NewRecorder()
 
+    // Get Value
+	response = httptest.NewRecorder()
 	request, _ = http.NewRequest(http.MethodGet, "/register/"+valid_reg, nil)
 	testHandler.handler.GetRegister(response, request)
 
@@ -296,6 +297,7 @@ func TestPutGetWriteback(t *testing.T) {
 	dec := json.NewDecoder(response.Body)
 	var respValue types.ModbusResponse
 	_ = dec.Decode(&respValue)
+    fmt.Println(respValue)
 
 	if respValue.Value != expected {
 		t.Errorf("Got %.2f, expected %.2f", respValue.Value, expected)
@@ -451,20 +453,22 @@ func TestApiWriteModbusRead(t *testing.T) {
 func TestApiDigitalWriteRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "1"
+    reg := digital_reg + "_1"
+
 
 	data := url.Values{}
 	data.Add("value", expected)
 
+    // Set Value
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodPut, "/register/"+digital_reg+"_1", nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/"+reg, nil)
 	request.URL.RawQuery = data.Encode()
-
 	testHandler.handler.GetRegister(response, request)
+
+    // Get Value
 	response = httptest.NewRecorder()
-
-	request, _ = http.NewRequest(http.MethodGet, "/register/"+digital_reg+"_1", nil)
+	request, _ = http.NewRequest(http.MethodGet, "/register/"+reg, nil)
 	testHandler.handler.GetRegister(response, request)
-
 	dec := json.NewDecoder(response.Body)
 	var respValue types.ModbusResponse
 	_ = dec.Decode(&respValue)
@@ -477,14 +481,16 @@ func TestApiDigitalWriteRead(t *testing.T) {
 }
 func TestApiDigitalWriteModbusRead(t *testing.T) {
 	testHandler := setupTestSuite()
-	expected := "1"
+	expected := "5"
 	mbClient := testHandler.mb_client
+    reg := digital_reg + "_2"
 
 	data := url.Values{}
 	data.Add("value", expected)
 
 	response := httptest.NewRecorder()
-	request, _ := http.NewRequest(http.MethodPut, "/register/"+digital_reg+"_0", nil)
+	request, _ := http.NewRequest(http.MethodPut, "/register/"+reg, nil)
+	request.URL.RawQuery = data.Encode()
 	testHandler.handler.GetRegister(response, request)
 
 	val, _ := mbClient.ReadRegister(10, modbus.HOLDING_REGISTER)
@@ -495,3 +501,24 @@ func TestApiDigitalWriteModbusRead(t *testing.T) {
 	}
 	testHandler.cleanUp()
 }
+/*func TestModbusDigitalWriteApiRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	expected := "1"
+	mbClient := testHandler.mb_client
+    reg := digital_reg + "_2"
+
+    _ = mbClient.WriteRegister(10, 5)
+
+    response := httptest.NewRecorder()
+    request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
+	testHandler.handler.GetRegister(response, request)
+	dec := json.NewDecoder(response.Body)
+	var respValue types.ModbusResponse
+	_ = dec.Decode(&respValue)
+	valStr := strconv.FormatFloat(respValue.Value, 'f', -1, 64)
+
+	if expected != valStr {
+		t.Errorf("Got %s, expected %s", valStr, expected)
+	}
+	testHandler.cleanUp()
+}*/
