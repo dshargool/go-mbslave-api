@@ -51,22 +51,21 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 	request := r.URL.Path
 	address := strings.TrimPrefix(request, "/register/")
-    var response types.ModbusResponse
-    var err error
-
+	var response types.ModbusResponse
+	var err error
 
 	switch r.Method {
 	case "GET":
-        response, err = h.db.GetRowByAddress(address)
-	    if err == sql.ErrNoRows {
-	    	slog.Warn("Could not get row by address; row not found", "error", err, "address", address)
-	    	w.WriteHeader(http.StatusNotFound)
-	    	return
-	    } else if err != nil {
-	    	slog.Warn("Could not get row by address", "err", err, "address", address)
-	    	w.WriteHeader(http.StatusInternalServerError)
-	    	return
-	    }
+		response, err = h.db.GetRowByAddress(address)
+		if err == sql.ErrNoRows {
+			slog.Warn("Could not get row by address; row not found", "error", err, "address", address)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		} else if err != nil {
+			slog.Warn("Could not get row by address", "err", err, "address", address)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		slog.Info("GET request for /register/<ADDRESS>", "address", address, "response", response)
 	case "PUT":
 		query := r.URL.Query()
@@ -91,7 +90,7 @@ func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-        response, err = h.db.GetRowByAddress(address)
+		response, err = h.db.GetRowByAddress(address)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -101,9 +100,9 @@ func (h Handler) GetRegister(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	w.Header().Add("Content-Type", "application/json")
-    err = json.NewEncoder(w).Encode(response)
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-	    return
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }

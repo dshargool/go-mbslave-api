@@ -282,13 +282,13 @@ func TestPutGetWriteback(t *testing.T) {
 	data := url.Values{}
 	data.Add("value", strconv.FormatFloat(expected, 'f', -1, 64))
 
-    // Set value
+	// Set value
 	response := httptest.NewRecorder()
 	request, _ := http.NewRequest(http.MethodPut, "/register/"+valid_reg, nil)
 	request.URL.RawQuery = data.Encode()
 	testHandler.handler.GetRegister(response, request)
 
-    // Get Value
+	// Get Value
 	response = httptest.NewRecorder()
 	request, _ = http.NewRequest(http.MethodGet, "/register/"+valid_reg, nil)
 	testHandler.handler.GetRegister(response, request)
@@ -297,7 +297,7 @@ func TestPutGetWriteback(t *testing.T) {
 	dec := json.NewDecoder(response.Body)
 	var respValue types.ModbusResponse
 	_ = dec.Decode(&respValue)
-    fmt.Println(respValue)
+	fmt.Println(respValue)
 
 	if respValue.Value != expected {
 		t.Errorf("Got %.2f, expected %.2f", respValue.Value, expected)
@@ -453,19 +453,18 @@ func TestApiWriteModbusRead(t *testing.T) {
 func TestApiDigitalWriteRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "1"
-    reg := digital_reg + "_1"
-
+	reg := digital_reg + "_1"
 
 	data := url.Values{}
 	data.Add("value", expected)
 
-    // Set Value
+	// Set Value
 	response := httptest.NewRecorder()
 	request, _ := http.NewRequest(http.MethodPut, "/register/"+reg, nil)
 	request.URL.RawQuery = data.Encode()
 	testHandler.handler.GetRegister(response, request)
 
-    // Get Value
+	// Get Value
 	response = httptest.NewRecorder()
 	request, _ = http.NewRequest(http.MethodGet, "/register/"+reg, nil)
 	testHandler.handler.GetRegister(response, request)
@@ -483,7 +482,7 @@ func TestApiDigitalWriteModbusRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "5"
 	mbClient := testHandler.mb_client
-    reg := digital_reg + "_2"
+	reg := digital_reg + "_2"
 
 	data := url.Values{}
 	data.Add("value", expected)
@@ -505,12 +504,12 @@ func TestModbusDigitalWriteApiRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "1"
 	mbClient := testHandler.mb_client
-    reg := digital_reg + "_2"
+	reg := digital_reg + "_2"
 
-    _ = mbClient.WriteRegister(10, 5)
+	_ = mbClient.WriteRegister(10, 5)
 
-    response := httptest.NewRecorder()
-    request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
 	testHandler.handler.GetRegister(response, request)
 	dec := json.NewDecoder(response.Body)
 	var respValue types.ModbusResponse
@@ -526,13 +525,13 @@ func TestMultipleModbusDigitalWriteApiRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "0"
 	mbClient := testHandler.mb_client
-    reg := digital_reg + "_2"
+	reg := digital_reg + "_2"
 
-    _ = mbClient.WriteRegister(10, 5)
-    _ = mbClient.WriteRegister(10, 3)
+	_ = mbClient.WriteRegister(10, 5)
+	_ = mbClient.WriteRegister(10, 3)
 
-    response := httptest.NewRecorder()
-    request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
 	testHandler.handler.GetRegister(response, request)
 	dec := json.NewDecoder(response.Body)
 	var respValue types.ModbusResponse
@@ -548,12 +547,12 @@ func TestModbusDigitalWriteApiTagRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "1"
 	mbClient := testHandler.mb_client
-    reg := "SampleTagDigital2" 
+	reg := "SampleTagDigital2"
 
-    _ = mbClient.WriteRegister(10, 5)
+	_ = mbClient.WriteRegister(10, 5)
 
-    response := httptest.NewRecorder()
-    request, _ := http.NewRequest(http.MethodGet, "/tag/"+reg, nil)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/tag/"+reg, nil)
 	testHandler.handler.GetTag(response, request)
 	dec := json.NewDecoder(response.Body)
 	var respValue types.ModbusResponse
@@ -569,13 +568,13 @@ func TestApiTagWriteModbusRead(t *testing.T) {
 	testHandler := setupTestSuite()
 	expected := "5"
 	mbClient := testHandler.mb_client
-    reg := "SampleTagDigital2" 
+	reg := "SampleTagDigital2"
 
 	data := url.Values{}
 	data.Add("value", "1")
 
-    response := httptest.NewRecorder()
-    request, _ := http.NewRequest(http.MethodPut, "/tag/"+reg, nil)
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodPut, "/tag/"+reg, nil)
 	request.URL.RawQuery = data.Encode()
 	testHandler.handler.GetTag(response, request)
 
