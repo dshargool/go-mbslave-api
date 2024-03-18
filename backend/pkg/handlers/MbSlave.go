@@ -155,20 +155,6 @@ func (h *Handler) HandleInputRegisters(req *modbus.InputRegistersRequest) (res [
 	return
 }
 
-func getDigitalDigit(dataType string) int {
-	if strings.Contains(dataType, "digital") {
-		split := strings.Split(dataType, "_")
-		if len(split) <= 1 {
-			return 0
-		}
-		digit, _ := strconv.Atoi(split[1])
-		return digit - 1
-	} else {
-		return 0
-	}
-
-}
-
 func parseDataTypeToByte(dataType string, value float64) (res []uint16, err error) {
 	// Split the string on the digital delimiter so we can always have the clean string.
 	// If the delimiter doesn't exist there's no change
