@@ -7,14 +7,14 @@ type InstrumentTag string
 type ModbusTag struct {
 	Tag         string `json:"tag"`
 	Description string `json:"description"`
-	Address     int    `json:"address"`
+	Address     string `json:"address"`
 	DataType    string `json:"datatype"`
 }
 
 type ModbusResponse struct {
 	Tag         string  `json:"tag"`
 	Description string  `json:"description"`
-	Address     int     `json:"address"`
+	Address     string  `json:"address"`
 	DataType    string  `json:"datatype"`
 	Value       float64 `json:"value"`
 	LastUpdate  string  `json:"last_update"`
