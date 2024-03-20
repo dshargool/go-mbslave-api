@@ -1,0 +1,111 @@
+{
+    "api_port": 8081,
+    "modbus_port": 6502,
+    "db": "/db/test.db",
+    "allow_null_register": true,
+    "registers": [
+        {
+            "tag": "300GW_ML:300LLT2201R.PNT",
+            "description": "Remote Setpoint Low Limit - ML",
+            "address": 40103,
+            "datatype": "float32"
+        },
+        {
+            "tag": "300GW_2_A:300HV2011.IN_1",
+            "description": "TAILS#2 DSTR TO CTAILS BLK VLV",
+            "address": 40001,
+            "datatype": "float32"
+        },
+        {
+            "tag": "300GW_2_A:300HV2012.IN_1",
+            "description": "TAILS#2 DSTR TO SCRN BLK VLV",
+            "address": 40001,
+            "datatype": "float32"
+        },
+        {
+            "tag": "300GW_2_B:300HV2003.IN_1",
+            "description": "BYPASS SCREEN TO PX201",
+            "address": 40001,
+            "datatype": "float32"
+        },
+        {
+            "tag": "300GW_2_A:300HV2006.IN_1",
+            "description": "TAILS#2 DSTR FLOT TAILS BLK VLV",
+            "address": 40001,
+            "datatype": "float32"
+        },
+        {
+            "tag": "331CP02_2:300FI2203.PNT",
+            "description": "CTAILS#2 FLOW",
+            "address": 41103,
+            "datatype": "float32"
+        },
+        {
+            "tag": "331CP02_2:300DT2203.PNT",
+            "description": "CTAIL#2 DENSITY",
+            "address": 41104,
+            "datatype": "float32"
+        },
+        {
+            "tag": "241CP02_2:240FIT2032.PNT",
+            "description": "PSC#2 U/F FLOW",
+            "address": 41105,
+            "datatype": "float32"
+        },
+        {
+            "tag": "241CP02_2:240DT2040.PNT",
+            "description": "PSC#2 U/F FLOW",
+            "address": 41106,
+            "datatype": "float32"
+        },
+        {
+            "tag": "242CP02_2:240TI2062.PNT",
+            "description": "PSC#2 MIDS TEMP",
+            "address": 41107,
+            "datatype": "float32"
+        },
+        {
+            "tag": "242CP02_2:240FI2148.PNT",
+            "description": "PRI FLOT#2 TAILS DISP FLOW",
+            "address": 41108,
+            "datatype": "float32"
+        },
+        {
+            "tag": "242CP02_2:240DI2062.PNT",
+            "description": "PSC#2 MIDS DENSITY",
+            "address": 41109,
+            "datatype": "float32"
+        },
+        {
+            "tag": "341CP02_2:300LY2104A.OUT",
+            "description": "300FCV203A SEC FLOT CELL",
+            "address": 41110,
+            "datatype": "float32"
+        },
+        {
+            "tag": "341CP02_2:300LY2104B.OUT",
+            "description": "300FC203A SEC FLOT CELL",
+            "address": 41111,
+            "datatype": "float32"
+        },
+        {
+            "tag": "341CP02_2:300LY2110A.OUT",
+            "description": "SEC FLOAT #2 CELL#2 VALVE A",
+            "address": 41112,
+            "datatype": "float32"
+        },
+        {
+            "tag": "341CP02_2:300LY2110B.OUT",
+            "description": "SEC FLOAT #2 CELL#3 VALVE A",
+            "address": 41113,
+            "datatype": "float32"
+        },
+        {
+            "tag": "331CP02_2:300DIC2203.SPT",
+            "description": "CTAILS #2 DENSITY",
+            "address": 41114,
+            "datatype": "float32"
+        }
+    ]
+}
+

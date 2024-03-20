@@ -7,14 +7,20 @@
         {
             "tag": "210XT1055.PNT",
             "description": "TestPoint1",
-            "address": 40001,
+            "address": "40001",
             "datatype": "float32"
         },
         {
             "tag": "210XT2055.PNT",
             "description": "TestPoint2",
-            "address": 40002,
+            "address": "40002",
             "datatype": "float32"
+        },
+        {
+            "tag": "DIGITAL.PNT",
+            "description": "TestPoint3",
+            "address": "40003_3",
+            "datatype": "digital_3"
         }
     ]
 }
