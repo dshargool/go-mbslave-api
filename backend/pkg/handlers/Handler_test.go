@@ -70,31 +70,31 @@ func setupTestSuite() testHandler {
 			Tag:         "SampleTagDigital0",
 			Description: "Digital0",
 			Address:     digital_reg + "_0",
-			DataType:    "digital_0",
+			DataType:    "digital",
 		},
 		{
 			Tag:         "SampleTagDigital1",
 			Description: "Digital1",
 			Address:     digital_reg + "_1",
-			DataType:    "digital_1",
+			DataType:    "digital",
 		},
 		{
 			Tag:         "SampleTagDigital2",
 			Description: "Digital2",
 			Address:     digital_reg + "_2",
-			DataType:    "digital_2",
+			DataType:    "digital",
 		},
 		{
 			Tag:         "SampleTagDigital3",
 			Description: "Digital3",
 			Address:     digital_reg + "_3",
-			DataType:    "digital_3",
+			DataType:    "digital",
 		},
 		{
 			Tag:         "SampleTagDigital11_0",
 			Description: "Digital3",
 			Address:     "11_0",
-			DataType:    "digital_0",
+			DataType:    "digital",
 		},
 	}
 	for _, register := range testRegisters {
