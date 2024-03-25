@@ -18,7 +18,7 @@ func (h Handler) GetRegisters(w http.ResponseWriter, r *http.Request) {
 		for addr := range h.registers {
 			val, err := h.db.GetRowByTag(string(addr))
 			if err != nil {
-				slog.Error(err.Error())
+				slog.Error("Unable to get register", "addr", string(addr), "err", err.Error())
 				reg := h.registers[addr]
 				empty_val := types.ModbusResponse{
 					Tag:         string(reg.Tag),
