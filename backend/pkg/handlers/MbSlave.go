@@ -91,7 +91,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 				data = append(data, req.Args[i+j])
 			}
 			// Convert the bytes of our slice to our data type
-			conv_val, err := parseByteToDataType(dataType, req.Args)
+			conv_val, err := parseByteToDataType(dataType, data)
 			if err != nil {
 				slog.Error("Unable to convert data type",
 					"address", regAddr, "value", conv_val, "err", err)
