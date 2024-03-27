@@ -21,9 +21,10 @@ type testHandler struct {
 }
 
 var (
-	null_reg    string = "2"
-	valid_reg   string = "4"
-	digital_reg string = "10"
+	null_reg       string = "2"
+	valid_reg      string = "4"
+	valid_reg_next string = "6"
+	digital_reg    string = "10"
 )
 
 var testConfig types.Configuration = types.Configuration{
@@ -54,6 +55,12 @@ func setupTestSuite() testHandler {
 			DataType:    "float32",
 		},
 		{
+			Tag:         "ValidTagF32_2",
+			Description: "Test",
+			Address:     valid_reg_next,
+			DataType:    "float32",
+		},
+		{
 			Tag:         "SampleTagF32",
 			Description: "Sample",
 			Address:     "16",
@@ -63,25 +70,31 @@ func setupTestSuite() testHandler {
 			Tag:         "SampleTagDigital0",
 			Description: "Digital0",
 			Address:     digital_reg + "_0",
-			DataType:    "digital_0",
+			DataType:    "digital",
 		},
 		{
 			Tag:         "SampleTagDigital1",
 			Description: "Digital1",
 			Address:     digital_reg + "_1",
-			DataType:    "digital_1",
+			DataType:    "digital",
 		},
 		{
 			Tag:         "SampleTagDigital2",
 			Description: "Digital2",
 			Address:     digital_reg + "_2",
-			DataType:    "digital_2",
+			DataType:    "digital",
 		},
 		{
 			Tag:         "SampleTagDigital3",
 			Description: "Digital3",
 			Address:     digital_reg + "_3",
-			DataType:    "digital_3",
+			DataType:    "digital",
+		},
+		{
+			Tag:         "SampleTagDigital11_0",
+			Description: "Digital3",
+			Address:     "11_0",
+			DataType:    "digital",
 		},
 	}
 	for _, register := range testRegisters {
@@ -92,6 +105,7 @@ func setupTestSuite() testHandler {
 	myDb.UpdateTableTags(testConfig.Registers)
 	// Set a valid value to our 'ValidTag' address in the test db
 	_ = myDb.SetAddressValue(valid_reg, 100.0)
+	_ = myDb.SetAddressValue(valid_reg_next, 100.0)
 	_ = myDb.SetAddressValue("16", 1123.4)
 	_ = myDb.SetAddressValue(digital_reg+"_0", 1)
 
@@ -410,8 +424,10 @@ func TestModbusWriteApiReadF32(t *testing.T) {
 	testHandler := setupTestSuite()
 	mbClient := testHandler.mb_client
 
-	mbValue, _ := mbClient.ReadFloat32(4, modbus.HOLDING_REGISTER)
-	_ = mbClient.WriteFloat32(4, mbValue)
+	regAddr, _ := strconv.Atoi(valid_reg)
+
+	mbValue, _ := mbClient.ReadFloat32(uint16(regAddr), modbus.HOLDING_REGISTER)
+	_ = mbClient.WriteFloat32(uint16(regAddr), mbValue)
 
 	response := httptest.NewRecorder()
 	request, _ := http.NewRequest(http.MethodGet, "/register/"+valid_reg, nil)
@@ -425,6 +441,54 @@ func TestModbusWriteApiReadF32(t *testing.T) {
 	if float32(apiValue.Value) != mbValue {
 		t.Errorf("Api %.2f, Modbus %.2f", apiValue.Value, mbValue)
 	}
+	testHandler.cleanUp()
+}
+
+func TestModbusWriteMultipleApiRead(t *testing.T) {
+	testHandler := setupTestSuite()
+	mbClient := testHandler.mb_client
+	expected := 123.23
+
+	regAddr, _ := strconv.Atoi(valid_reg)
+	mbValues := make([]float32, 0)
+	mbValues = append(mbValues, float32(expected))
+	mbValues = append(mbValues, float32(expected+1))
+	_ = mbClient.WriteFloat32s(uint16(regAddr), mbValues)
+
+	{
+
+		response := httptest.NewRecorder()
+		request, _ := http.NewRequest(http.MethodGet, "/register/"+strconv.Itoa(regAddr), nil)
+		testHandler.handler.GetRegister(response, request)
+
+		//_ := response.Result().StatusCode
+		dec := json.NewDecoder(response.Body)
+		var apiValue types.ModbusResponse
+		_ = dec.Decode(&apiValue)
+
+		if float32(apiValue.Value) != float32(expected) {
+			t.Errorf("Api %.2f, Modbus %.2f", apiValue.Value, expected)
+		} else {
+            t.Logf("Api %.2f, Modbus %.2f", apiValue.Value, expected)
+        }
+	}
+	{
+		regAddr, _ := strconv.Atoi(valid_reg_next)
+
+		response := httptest.NewRecorder()
+		request, _ := http.NewRequest(http.MethodGet, "/register/"+strconv.Itoa(regAddr), nil)
+		testHandler.handler.GetRegister(response, request)
+
+		//_ := response.Result().StatusCode
+		dec := json.NewDecoder(response.Body)
+		var apiValue types.ModbusResponse
+		_ = dec.Decode(&apiValue)
+
+		if float32(apiValue.Value) != float32(expected+1) {
+			t.Errorf("Api %.2f, Modbus %.2f", apiValue.Value, expected+1)
+		}
+	}
+
 	testHandler.cleanUp()
 }
 
@@ -523,13 +587,14 @@ func TestModbusDigitalWriteApiRead(t *testing.T) {
 }
 func TestMultipleModbusDigitalWriteApiRead(t *testing.T) {
 	testHandler := setupTestSuite()
-	expected := "0"
+	expected := "1"
 	mbClient := testHandler.mb_client
+
+    data := []uint16{5, 3}
+
+	_ = mbClient.WriteRegisters(10, data)
+    {   
 	reg := digital_reg + "_2"
-
-	_ = mbClient.WriteRegister(10, 5)
-	_ = mbClient.WriteRegister(10, 3)
-
 	response := httptest.NewRecorder()
 	request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
 	testHandler.handler.GetRegister(response, request)
@@ -541,6 +606,21 @@ func TestMultipleModbusDigitalWriteApiRead(t *testing.T) {
 	if expected != valStr {
 		t.Errorf("Got %s, expected %s", valStr, expected)
 	}
+}
+    {   
+	reg := digital_reg + "_1"
+	response := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/register/"+reg, nil)
+	testHandler.handler.GetRegister(response, request)
+	dec := json.NewDecoder(response.Body)
+	var respValue types.ModbusResponse
+	_ = dec.Decode(&respValue)
+	valStr := strconv.FormatFloat(respValue.Value, 'f', -1, 64)
+
+	if "0" != valStr {
+		t.Errorf("Got %s, expected %s", valStr, "0")
+	}
+}
 	testHandler.cleanUp()
 }
 func TestModbusDigitalWriteApiTagRead(t *testing.T) {
