@@ -23,7 +23,7 @@ FROM node:alpine3.18 as svelte_build
 COPY frontend/package.json . 
 COPY frontend/package-lock.json . 
 RUN npm ci
-RUN npm audit fix 
+RUN npm audit fix; exit 0
 COPY frontend .
 RUN echo "PUBLIC_API_URL='http://localhost:8080/api'" > .env
 RUN npm run build

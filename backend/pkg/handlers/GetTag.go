@@ -42,7 +42,7 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 		if value != "" {
 			fValue, err := strconv.ParseFloat(value, 64)
 			if err != nil {
-				slog.Error("Could not parse request value as float", err)
+				slog.Error("Could not parse request value as float", "error", err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 
@@ -52,7 +52,7 @@ func (h Handler) GetTag(w http.ResponseWriter, r *http.Request) {
 				strconv.FormatFloat(fValue, 'f', -1, 64))
 			err = h.db.SetTagValue(tag, fValue)
 			if err != nil {
-				slog.Error("Could not set tag value", err)
+				slog.Error("Could not set tag value", "error", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}

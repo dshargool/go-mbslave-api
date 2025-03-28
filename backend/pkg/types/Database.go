@@ -3,7 +3,6 @@ package types
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log/slog"
 	"strconv"
 	"strings"
@@ -26,19 +25,37 @@ func (db *SqlDb) CreateTable() error {
 	var exists bool
 	if err := db.QueryRow("SELECT COUNT(name) FROM sqlite_master WHERE type='table' AND name='datapoints';").Scan(
 		&exists); err != nil && err != sql.ErrNoRows {
-		slog.Error("Failed to create new table", "error", err)
+		slog.Error("Could not find table", "error", err)
 		return err
 	}
 	if !exists {
-		results, err := db.Exec("CREATE TABLE datapoints (address VARCHAR(100) PRIMARY KEY NOT NULL, description VARCHAR(100), tag VARCHAR(75) NOT NULL, value REAL, datatype VARCHAR(10), last_update TEXT DEFAULT CURRENT_TIMESTAMP);")
+		createTableQuery := "CREATE TABLE datapoints (address VARCHAR(100) PRIMARY KEY NOT NULL, description VARCHAR(100), tag VARCHAR(75) NOT NULL, value REAL, datatype VARCHAR(10), last_update TEXT DEFAULT CURRENT_TIMESTAMP);"
+		results, err := db.Exec(createTableQuery, nil)
 		if err != nil {
-			fmt.Println("failed to execute query", err)
+			slog.Error("Could not create table", "error", err)
 			return err
 		}
 		slog.Info("Table created successfully", "result", results)
 	} else {
 		slog.Info("Table 'datapoints' already exists ")
 	}
+
+		createTriggerQuery := `
+	CREATE TRIGGER IF NOT EXISTS update_last_update
+	AFTER UPDATE ON datapoints
+	FOR EACH ROW
+	BEGIN
+		UPDATE datapoints
+		SET last_update = CURRENT_TIMESTAMP
+		WHERE rowid = OLD.rowid;
+	END;
+	`
+	results, err := db.Exec(createTriggerQuery)
+	if err != nil {
+		slog.Error("Could not create table trigger", "error", err)
+		return err
+	}
+	slog.Info("Table trigger created successfully", "result", results)
 	return nil
 }
 
