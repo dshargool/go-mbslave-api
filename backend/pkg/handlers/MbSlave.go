@@ -13,6 +13,19 @@ import (
 	"github.com/simonvetter/modbus"
 )
 
+// logTiming is a helper function to log response timing for Modbus handlers
+func logTiming(functionName string, start time.Time, err *error, attrs ...any) {
+	status := "success"
+	if err != nil && *err != nil {
+		status = "error"
+	}
+
+	logAttrs := []any{"duration", time.Since(start), "status", status}
+	logAttrs = append(logAttrs, attrs...)
+
+	slog.Debug(functionName+"_timing", logAttrs...)
+}
+
 func (h Handler) MbInit(port int) *modbus.ModbusServer {
 	mbServer, err := modbus.NewServer(&modbus.ServerConfiguration{
 		URL:        "tcp://0.0.0.0:" + strconv.Itoa(port),
@@ -43,18 +56,30 @@ func (h Handler) MbStop() {
 }
 
 func (h *Handler) HandleCoils(req *modbus.CoilsRequest) (res []bool, err error) {
-	slog.Warn("Not implemented!")
+	start := time.Now()
+	defer func() {
+		logTiming("HandleCoils", start, &err, "addr", req.Addr, "quanity", req.Quantity, "clientIp", req.ClientAddr)
+	}()
+	slog.Warn("HandleCoils Not implemented!")
 	return
 }
 
 func (h *Handler) HandleDiscreteInputs(req *modbus.DiscreteInputsRequest) (res []bool, err error) {
-	slog.Warn("Not implemented!")
+	start := time.Now()
+	defer func() {
+		logTiming("HandleDiscreteInputs", start, &err, "addr", req.Addr, "quanity", req.Quantity, "clientIp", req.ClientAddr)
+	}()
+	slog.Warn("HandleDiscreteInputs Not implemented!")
 	return
 }
 
 func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (res []uint16, err error) {
 	// Write to DB entry with matching address.
 	// Only update don't insert as the DbHandler should do the inserting of null values
+	start := time.Now()
+	defer func() {
+		logTiming("HandleHoldingRegisters", start, &err, "addr", req.Addr, "quanity", req.Quantity, "clientIp", req.ClientAddr)
+	}()
 	slog.Info("HandleHoldingRegisters - new request", "req", req)
 	var dataType string
 	i := 0
@@ -151,7 +176,11 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 }
 
 func (h *Handler) HandleInputRegisters(req *modbus.InputRegistersRequest) (res []uint16, err error) {
-	slog.Warn("Not implemented!")
+	start := time.Now()
+	defer func() {
+		logTiming("HandleInputRegisters", start, &err, "addr", req.Addr, "quanity", req.Quantity, "clientIp", req.ClientAddr)
+	}()
+	slog.Warn("HandleInputRegisters Not implemented!")
 	return
 }
 
