@@ -78,7 +78,7 @@ func (h *Handler) HandleHoldingRegisters(req *modbus.HoldingRegistersRequest) (r
 	// Only update don't insert as the DbHandler should do the inserting of null values
 	start := time.Now()
 	defer func() {
-		logTiming("HandleHoldingRegisters", start, &err, "addr", req.Addr, "quanity", req.Quantity, "clientIp", req.ClientAddr)
+		logTiming("HandleHoldingRegisters", start, &err, "addr", req.Addr, "quantity", req.Quantity, "clientIp", req.ClientAddr, "write", req.IsWrite)
 	}()
 	slog.Info("HandleHoldingRegisters - new request", "req", req)
 	var dataType string
