@@ -6,6 +6,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/dshargool/go-mbslave-api.git/pkg/handlers"
 	"github.com/dshargool/go-mbslave-api.git/pkg/types"
@@ -24,6 +25,20 @@ func main() {
 	config, err := config.ReadConfig(config_path)
 	if err != nil {
 		log.Fatal("Error reading config ", err)
+	}
+
+	// Set log level based on configuration
+	switch strings.ToLower(config.LogLevel) {
+	case "debug":
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	case "info":
+		slog.SetLogLoggerLevel(slog.LevelInfo)
+	case "warn", "warning":
+		slog.SetLogLoggerLevel(slog.LevelWarn)
+	case "error":
+		slog.SetLogLoggerLevel(slog.LevelError)
+	default:
+		slog.SetLogLoggerLevel(slog.LevelInfo) // Default to info level
 	}
 
 	db_path := *dbPtr

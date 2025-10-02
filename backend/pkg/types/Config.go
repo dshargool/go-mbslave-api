@@ -10,6 +10,7 @@ type ConfigurationData struct {
 	ApiPort           int         `json:"api_port"`
 	ModbusPort        int         `json:"modbus_port"`
 	DBPath            string      `json:"db"`
+	LogLevel          string      `json:"log_level"`
 	Description       string      `json:"description"`
 	Registers         []ModbusTag `json:"registers"`
 	AllowNullRegister bool        `json:"allow_null_register"`
@@ -18,6 +19,7 @@ type Configuration struct {
 	ApiPort           int
 	ModbusPort        int
 	DBPath            string
+	LogLevel          string
 	AllowNullRegister bool
 	Registers         map[InstrumentTag]ModbusTag
 }
@@ -45,6 +47,7 @@ func (c ConfigurationData) dataToConfiguration() Configuration {
 	config.ApiPort = c.ApiPort
 	config.ModbusPort = c.ModbusPort
 	config.DBPath = c.DBPath
+	config.LogLevel = c.LogLevel
 	config.AllowNullRegister = c.AllowNullRegister
 	for _, reg := range c.Registers {
 		config.Registers[InstrumentTag(reg.Tag)] = reg
