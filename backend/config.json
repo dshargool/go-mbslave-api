@@ -6,13 +6,13 @@
     "allow_null_register": true,
     "registers": [
         {
-            "tag": "210XT1055.PNT",
+            "tag": "TAG1.PNT",
             "description": "TestPoint1",
             "address": "40001",
             "datatype": "float32"
         },
         {
-            "tag": "210XT2055.PNT",
+            "tag": "TAG2.PNT",
             "description": "TestPoint2",
             "address": "40002",
             "datatype": "float32"
